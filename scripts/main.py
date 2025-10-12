@@ -4,17 +4,17 @@ from string_generator import StringGenerator
 from else_if_generator import ElseIfGenerator
 
 # --- Génération des fichiers de chaînes ---
-#StringGenerator.create_file(StringGenerator.generate_octet_strings, 3000, "strings/octet.txt")
-#StringGenerator.create_file(StringGenerator.generate_french_like_strings, 10, "strings/french.txt")
+StringGenerator.create_file(StringGenerator.generate_octet_strings, 3000, "strings/octet.txt")
+StringGenerator.create_file(StringGenerator.generate_french_like_strings, 10, "strings/french.txt")
 
 # --- Génération du code C++ ---
-#generator = ElseIfGenerator(
- #   cpp_file="echo.cpp",
- #   strings_file="strings/octet.txt",
- #   output_file="custom_echo_generated.cpp"
-#)
-#generator.load_strings()
-#generator.generate_cpp()
+generator = ElseIfGenerator(
+    cpp_file="echo.cpp",
+    strings_file="strings/octet.txt",
+    output_file="custom_echo_generated.cpp"
+)
+generator.load_strings()
+generator.generate_cpp()
 
 
 from cipher_bytecode import PasswordCrypto

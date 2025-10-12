@@ -78,3 +78,42 @@ class PasswordCrypto:
             raise ValueError("Algorithm must be 'AES' or 'ChaCha20'")
 
         return plaintext
+
+
+def xor_bytes(bytecode: bytes, key: bytes) -> bytes:
+    """
+    XOR each byte of bytecode with the key, repeating the key if necessary.
+    """
+    key_len = len(key)
+    return bytes([b ^ key[i % key_len] for i, b in enumerate(bytecode)])
+
+
+def xor_bytes(bytecode: bytes, key: bytes) -> bytes:
+    """
+    XOR each byte of bytecode with the key, repeating the key if necessary.
+    """
+    key_len = len(key)
+    return bytes([b ^ key[i % key_len] for i, b in enumerate(bytecode)])
+
+def bytes_to_hex(bytecode: bytes) -> list[str]:
+    """
+    Convert bytes to a list of '0xNN' strings.
+    """
+    return [f"0x{b:02X}" for b in bytecode]
+
+# Exemple
+bytecode = bytes([0x48, 0x65, 0x6C, 0x6C, 0x6F])  # "Hello"
+key = b'\x02'
+
+# Chiffrement XOR
+encrypted = xor_bytes(bytecode, key)
+
+# Affichage en bytes et en hex
+print("Encrypted bytes:", encrypted)
+print("Encrypted hex:", bytes_to_hex(encrypted))
+
+# Déchiffrement
+decrypted = xor_bytes(encrypted, key)
+print("Decrypted bytes:", decrypted)
+print("Decrypted hex:", bytes_to_hex(decrypted))
+

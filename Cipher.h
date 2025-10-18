@@ -7,13 +7,15 @@
 #include <algorithm>
 
 /**
- * Enum pour les différents encodages de clé
+ * Namespace pour les différents encodages de clé
  */
-enum class KeyEncoding {
-    PLAIN,    // Clé en clair
-    BASE64,   // Clé encodée en Base64
-    BASE32    // Clé encodée en Base32
-};
+namespace KeyEncoding {
+    enum Type {
+        PLAIN,    // Clé en clair
+        BASE64,   // Clé encodée en Base64
+        BASE32    // Clé encodée en Base32
+    };
+}
 
 /**
  * Class for XOR encryption/decryption with variable key
@@ -34,17 +36,18 @@ private:
         std::string decoded;
         std::vector<int> T(256, -1);
 
-        for (int i = 0; i < 64; i++) {
-            T[BASE64_CHARS[i]] = i;
+        for (size_t i = 0; i < 64; i++) {
+            T[BASE64_CHARS[i]] = static_cast<int>(i);
         }
 
         int val = 0, valb = -8;
-        for (unsigned char c : encoded) {
+        for (size_t i = 0; i < encoded.length(); i++) {
+            unsigned char c = encoded[i];
             if (T[c] == -1) break;
             val = (val << 6) + T[c];
             valb += 6;
             if (valb >= 0) {
-                decoded.push_back(char((val >> valb) & 0xFF));
+                decoded.push_back(static_cast<char>((val >> valb) & 0xFF));
                 valb -= 8;
             }
         }
@@ -58,19 +61,20 @@ private:
         std::string decoded;
         std::vector<int> T(256, -1);
 
-        for (int i = 0; i < 32; i++) {
-            T[BASE32_CHARS[i]] = i;
+        for (size_t i = 0; i < 32; i++) {
+            T[BASE32_CHARS[i]] = static_cast<int>(i);
         }
 
         int val = 0, valb = -5;
-        for (unsigned char c : encoded) {
+        for (size_t i = 0; i < encoded.length(); i++) {
+            unsigned char c = encoded[i];
             if (c == '=') break; // Padding
             if (T[c] == -1) continue;
 
             val = (val << 5) + T[c];
             valb += 5;
             if (valb >= 0) {
-                decoded.push_back(char((val >> valb) & 0xFF));
+                decoded.push_back(static_cast<char>((val >> valb) & 0xFF));
                 valb -= 8;
             }
         }
@@ -105,9 +109,19 @@ private:
 
 public:
     /**
+     * Constructeur avec clé personnalisée (plain)
+     */
+    explicit Cipher(const std::string& customKey) {
+        if (customKey.empty()) {
+            throw std::runtime_error("[ERROR] The key cannot be empty");
+        }
+        key = customKey;
+    }
+
+    /**
      * Constructeur avec clé personnalisée et encodage
      */
-    explicit Cipher(const std::string& customKey, KeyEncoding encoding = KeyEncoding::PLAIN) {
+    Cipher(const std::string& customKey, KeyEncoding::Type encoding) {
         if (customKey.empty()) {
             throw std::runtime_error("[ERROR] The key cannot be empty");
         }
@@ -176,9 +190,19 @@ public:
     }
 
     /**
-     * Change la clé de chiffrement avec encodage optionnel
+     * Change la clé de chiffrement (plain)
      */
-    void setKey(const std::string& newKey, KeyEncoding encoding = KeyEncoding::PLAIN) {
+    void setKey(const std::string& newKey) {
+        if (newKey.empty()) {
+            throw std::runtime_error("[ERROR] The key cannot be empty");
+        }
+        key = newKey;
+    }
+
+    /**
+     * Change la clé de chiffrement avec encodage
+     */
+    void setKey(const std::string& newKey, KeyEncoding::Type encoding) {
         if (newKey.empty()) {
             throw std::runtime_error("[ERROR] The key cannot be empty");
         }
@@ -230,7 +254,8 @@ public:
         std::string encoded;
         int val = 0, valb = -6;
 
-        for (unsigned char c : data) {
+        for (size_t i = 0; i < data.size(); i++) {
+            unsigned char c = data[i];
             val = (val << 8) + c;
             valb += 8;
             while (valb >= 0) {
@@ -257,7 +282,8 @@ public:
         std::string encoded;
         int val = 0, valb = -5;
 
-        for (unsigned char c : data) {
+        for (size_t i = 0; i < data.size(); i++) {
+            unsigned char c = data[i];
             val = (val << 8) + c;
             valb += 8;
             while (valb >= 0) {
@@ -323,12 +349,5 @@ public:
         return bytes;
     }
 };
-
-// Définition des tables statiques
-const std::string Cipher::BASE64_CHARS =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-const std::string Cipher::BASE32_CHARS =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 #endif // SIMPLE_CIPHER_HPP

@@ -7,7 +7,7 @@
 
 int main() {
 
-    Cipher cipher("SGVsbG9Xb3JsZA==", KeyEncoding::BASE64);
+    Cipher cipher("Z2l0aHViLmNvbS9tb2lzZTcwMDAvTWFsd2FyZS1UZWxlY29tCg==", KeyEncoding::BASE64);
 
     // Chiffrer un message
     std::string message = "Bonjour!";

@@ -7,12 +7,19 @@
 #include <vector>
 #include <cstring>
 #include <stdexcept>
+#include <sstream>
 #include <zlib.h>
 
-class compressor {
-public:
+namespace compressor {
+    // Fonction helper pour convertir int en string (std::to_string n'existe pas en C++98)
+    inline std::string toString(int value) {
+        std::ostringstream oss;
+        oss << value;
+        return oss.str();
+    }
+
     // Compresse un tableau de bytes
-    static std::vector<unsigned char> compress(const unsigned char* data, size_t size, int level = Z_DEFAULT_COMPRESSION) {
+    inline std::vector<unsigned char> compress(const unsigned char* data, size_t size, int level) {
         if (size == 0) {
             return std::vector<unsigned char>();
         }
@@ -31,7 +38,7 @@ public:
         );
 
         if (result != Z_OK) {
-            throw std::runtime_error("Erreur lors de la compression: " + std::to_string(result));
+            throw std::runtime_error("Erreur lors de la compression: " + toString(result));
         }
 
         // Redimensionne le vecteur à la taille réelle
@@ -39,13 +46,18 @@ public:
         return compressed;
     }
 
-    // Surcharge pour std::vector
-    static std::vector<unsigned char> compress(const std::vector<unsigned char>& data, int level = Z_DEFAULT_COMPRESSION) {
-        return compress(data.data(), data.size(), level);
+    // Surcharge pour std::vector avec valeur par défaut
+    inline std::vector<unsigned char> compress(const std::vector<unsigned char>& data, int level) {
+        return compress(&data[0], data.size(), level);
+    }
+
+    // Surcharge sans niveau de compression (utilise Z_DEFAULT_COMPRESSION)
+    inline std::vector<unsigned char> compress(const std::vector<unsigned char>& data) {
+        return compress(&data[0], data.size(), Z_DEFAULT_COMPRESSION);
     }
 
     // Décompresse des données
-    static std::vector<unsigned char> decompress(const unsigned char* data, size_t compressedSize, size_t originalSize) {
+    inline std::vector<unsigned char> decompress(const unsigned char* data, size_t compressedSize, size_t originalSize) {
         if (compressedSize == 0) {
             return std::vector<unsigned char>();
         }
@@ -62,7 +74,7 @@ public:
         );
 
         if (result != Z_OK) {
-            throw std::runtime_error("Erreur lors de la décompression: " + std::to_string(result));
+            throw std::runtime_error("Erreur lors de la décompression: " + toString(result));
         }
 
         decompressed.resize(decompressedSize);
@@ -70,13 +82,9 @@ public:
     }
 
     // Surcharge pour std::vector
-    static std::vector<unsigned char> decompress(const std::vector<unsigned char>& data, size_t originalSize) {
-        return decompress(data.data(), data.size(), originalSize);
+    inline std::vector<unsigned char> decompress(const std::vector<unsigned char>& data, size_t originalSize) {
+        return decompress(&data[0], data.size(), originalSize);
     }
-
-
-};
+}
 
 #endif // COMPRESSOR_H
-
-

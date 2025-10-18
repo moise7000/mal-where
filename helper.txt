@@ -8,4 +8,4 @@ g++ -Os -s ^
     -Wl,--strip-all ^
     -Wl,--strip-debug ^
     -Wl,--exclude-libs,ALL ^
-    source.cpp -o test.exe
+    Cipher.cpp test_cipher.cpp -o test.exe

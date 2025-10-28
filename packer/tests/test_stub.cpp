@@ -3,11 +3,22 @@
 // Created on 10/28/25
 //
 
+//
+// Fichier de test pour la classe Packer
+// Created on 10/28/25
+//
+
 #include "../Stub.h"
 #include <iostream>
 #include <cassert>
 #include <string>
 #include <vector>
+
+// Codes de couleur ANSI
+#define COLOR_RESET   "\033[0m"
+#define COLOR_RED     "\033[31m"
+#define COLOR_GREEN   "\033[32m"
+#define COLOR_YELLOW  "\033[33m"
 
 // Fonction utilitaire pour afficher un vecteur de bytes
 void printBytes(const std::vector<unsigned char>& data) {
@@ -27,9 +38,9 @@ void testConstructorBasic() {
 
     try {
         Packer packer("ma_cle_secrete");
-        std::cout << "✓ Constructeur basique OK" << std::endl;
+        std::cout << COLOR_GREEN << "✓ Constructeur basique OK" << COLOR_RESET << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "✗ Erreur: " << e.what() << std::endl;
+        std::cerr << COLOR_RED << "✗ Erreur: " << e.what() << COLOR_RESET << std::endl;
     }
 }
 
@@ -39,15 +50,15 @@ void testConstructorWithEncoding() {
 
     try {
         Packer packerPlain("ma_cle", KeyEncoding::PLAIN);
-        std::cout << "✓ Constructeur PLAIN OK" << std::endl;
+        std::cout << COLOR_GREEN << "✓ Constructeur PLAIN OK" << COLOR_RESET << std::endl;
 
         Packer packerB64("bWFfY2xl", KeyEncoding::BASE64);
-        std::cout << "✓ Constructeur BASE64 OK" << std::endl;
+        std::cout << COLOR_GREEN << "✓ Constructeur BASE64 OK" << COLOR_RESET << std::endl;
 
         Packer packerB32("NV4SA3TPOI======", KeyEncoding::BASE32);
-        std::cout << "✓ Constructeur BASE32 OK" << std::endl;
+        std::cout << COLOR_GREEN << "✓ Constructeur BASE32 OK" << COLOR_RESET << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "✗ Erreur: " << e.what() << std::endl;
+        std::cerr << COLOR_RED << "✗ Erreur: " << e.what() << COLOR_RESET << std::endl;
     }
 }
 
@@ -58,55 +69,46 @@ void testUnpackSimple() {
     try {
         Packer packer("MaSuperCleSecrete123");
 
-        unsigned char plain[] = {0x56, 0x34, 0x12, 0x78, 0x9A, 0xBC, 0xDE, 0xF0};
+        unsigned char packed_array[] = {
+            0x06, 0x82, 0x87, 0x8f, 0x82, 0x90, 0x19, 0xbc,
+            0x98, 0xe8, 0x83, 0x34, 0x0d, 0xba, 0x35, 0x81
+        };
 
-
-
-        unsigned char packed_array[] = {0x06, 0x82, 0x87, 0x8f, 0x82, 0x90, 0x19, 0xbc, 0x98, 0xe8, 0x83, 0x34, 0x0d, 0xba, 0x35, 0x81};
-
-        // Conversion du tableau en vecteur
         std::vector<unsigned char> packed(packed_array, packed_array + sizeof(packed_array));
         size_t originalSize = sizeof(packed_array);
 
         std::cout << "Message chiffré/compressé: ";
-        printBytes(packed);  // Maintenant packed est un vector
+        printBytes(packed);
 
         std::vector<unsigned char> result = packer.unpack(packed, originalSize);
 
         std::cout << "Message déchiffré/décompressé: ";
         printBytes(result);
         std::cout << "Taille: " << result.size() << " bytes" << std::endl;
-        std::cout << "✓ Test unpack OK" << std::endl;
-        
+        std::cout << COLOR_GREEN << "✓ Test unpack OK" << COLOR_RESET << std::endl;
 
     } catch (const std::exception& e) {
-        std::cerr << "✗ Erreur: " << e.what() << std::endl;
+        std::cerr << COLOR_RED << "✗ Erreur: " << e.what() << COLOR_RESET << std::endl;
     }
 }
 
-
-
-
-
-
-
-
-
-
 // Fonction principale de test
 int main() {
-    std::cout << "========================================" << std::endl;
-    std::cout << "   TESTS DE LA CLASSE PACKER" << std::endl;
-    std::cout << "========================================" << std::endl;
+    std::cout << COLOR_YELLOW
+              << "========================================\n"
+              << "   TESTS DE LA CLASSE PACKER\n"
+              << "========================================"
+              << COLOR_RESET << std::endl;
 
     testConstructorBasic();
     testConstructorWithEncoding();
     testUnpackSimple();
 
-
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "   FIN DES TESTS" << std::endl;
-    std::cout << "========================================\n" << std::endl;
+    std::cout << COLOR_YELLOW
+              << "\n========================================\n"
+              << "   FIN DES TESTS\n"
+              << "========================================"
+              << COLOR_RESET << std::endl;
 
     return 0;
 }

@@ -6,7 +6,8 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
-#include "compressor.h"
+#include <zlib.h>
+#include "../Compressor.h"
 
 // Fonction pour afficher les données en hexadécimal
 void printHex(const std::vector<unsigned char>& data, const std::string& label) {
@@ -30,7 +31,7 @@ int main() {
         printHex(original, "Données originales");
 
         // Compression
-        std::vector<unsigned char> compressed = compressor::compress(code, originalSize, Z_DEFAULT_COMPRESSION);
+        std::vector<unsigned char> compressed = Compressor::compress(code, originalSize, Z_DEFAULT_COMPRESSION);
         std::cout << "Taille originale: " << originalSize << " bytes\n";
         std::cout << "Taille compressée: " << compressed.size() << " bytes\n\n";
 
@@ -38,7 +39,7 @@ int main() {
         printHex(compressed, "Données compressées");
 
         // Décompression
-        std::vector<unsigned char> decompressed = compressor::decompress(compressed, originalSize);
+        std::vector<unsigned char> decompressed = Compressor::decompress(compressed, originalSize);
         std::cout << "Taille décompressée: " << decompressed.size() << " bytes\n";
 
         // Afficher les données décompressées

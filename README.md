@@ -6,15 +6,14 @@ This project is part of the "Malware et rétro-ingénierie" course taught by Gui
 
 ## Evaluation Requirements
 
-| Criteria                | ?   |
-|-------------------------|-----|
-| Anti-Debug mechanism    | []  |
-| Anti-Debug Checksum     | []  |
-| Syntaxic obfuscation    | []  |
-| Switch functions        | []  |
-| Packer                  | [x] |
-| Self modifying function | []  |
-| Attack on the VM        | []  |
+
+- [ ] Anti-Debug mechanism    
+- [ ] Anti-Debug Checksum     
+- [ ] Syntaxic obfuscation    
+- [ ] Switch functions        
+- [x] Packer                  
+- [ ] Self modifying function 
+- [ ] Attack on the VM        
 
 
 

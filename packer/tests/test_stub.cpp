@@ -13,12 +13,29 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <windows.h> // Pour changer la couleur du texte
 
-// Codes de couleur ANSI
-#define COLOR_RESET   "\033[0m"
-#define COLOR_RED     "\033[31m"
-#define COLOR_GREEN   "\033[32m"
-#define COLOR_YELLOW  "\033[33m"
+// Fonctions utilitaires pour colorer le texte
+void printGreen(const std::string& msg) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, 10); // vert
+    std::cout << msg << std::endl;
+    SetConsoleTextAttribute(hConsole, 7);  // couleur par défaut
+}
+
+void printRed(const std::string& msg) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, 12); // rouge
+    std::cout << msg << std::endl;
+    SetConsoleTextAttribute(hConsole, 7);  // couleur par défaut
+}
+
+void printYellow(const std::string& msg) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, 14); // jaune
+    std::cout << msg << std::endl;
+    SetConsoleTextAttribute(hConsole, 7);  // couleur par défaut
+}
 
 // Fonction utilitaire pour afficher un vecteur de bytes
 void printBytes(const std::vector<unsigned char>& data) {
@@ -38,9 +55,9 @@ void testConstructorBasic() {
 
     try {
         Packer packer("ma_cle_secrete");
-        std::cout << COLOR_GREEN << "✓ Constructeur basique OK" << COLOR_RESET << std::endl;
+        printGreen(" Constructeur basique OK");
     } catch (const std::exception& e) {
-        std::cerr << COLOR_RED << "✗ Erreur: " << e.what() << COLOR_RESET << std::endl;
+        printRed(std::string(" Erreur: ") + e.what());
     }
 }
 
@@ -50,15 +67,15 @@ void testConstructorWithEncoding() {
 
     try {
         Packer packerPlain("ma_cle", KeyEncoding::PLAIN);
-        std::cout << COLOR_GREEN << "✓ Constructeur PLAIN OK" << COLOR_RESET << std::endl;
+        printGreen("Constructeur PLAIN OK");
 
         Packer packerB64("bWFfY2xl", KeyEncoding::BASE64);
-        std::cout << COLOR_GREEN << "✓ Constructeur BASE64 OK" << COLOR_RESET << std::endl;
+        printGreen("Constructeur BASE64 OK");
 
         Packer packerB32("NV4SA3TPOI======", KeyEncoding::BASE32);
-        std::cout << COLOR_GREEN << "✓ Constructeur BASE32 OK" << COLOR_RESET << std::endl;
+        printGreen("Constructeur BASE32 OK");
     } catch (const std::exception& e) {
-        std::cerr << COLOR_RED << "✗ Erreur: " << e.what() << COLOR_RESET << std::endl;
+        printRed(std::string(" Erreur: ") + e.what());
     }
 }
 
@@ -85,30 +102,26 @@ void testUnpackSimple() {
         std::cout << "Message déchiffré/décompressé: ";
         printBytes(result);
         std::cout << "Taille: " << result.size() << " bytes" << std::endl;
-        std::cout << COLOR_GREEN << "✓ Test unpack OK" << COLOR_RESET << std::endl;
+        printGreen(" Test unpack OK");
 
     } catch (const std::exception& e) {
-        std::cerr << COLOR_RED << "✗ Erreur: " << e.what() << COLOR_RESET << std::endl;
+        printRed(std::string("✗ Erreur: ") + e.what());
     }
 }
 
 // Fonction principale de test
 int main() {
-    std::cout << COLOR_YELLOW
-              << "========================================\n"
-              << "   TESTS DE LA CLASSE PACKER\n"
-              << "========================================"
-              << COLOR_RESET << std::endl;
+    printYellow("========================================");
+    printYellow("   TESTS DE LA CLASSE PACKER");
+    printYellow("========================================");
 
     testConstructorBasic();
     testConstructorWithEncoding();
     testUnpackSimple();
 
-    std::cout << COLOR_YELLOW
-              << "\n========================================\n"
-              << "   FIN DES TESTS\n"
-              << "========================================"
-              << COLOR_RESET << std::endl;
+    printYellow("\n========================================");
+    printYellow("   FIN DES TESTS");
+    printYellow("========================================\n");
 
     return 0;
 }

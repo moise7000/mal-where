@@ -77,7 +77,7 @@ void testUnpackSimple() {
         printBytes(result);
         std::cout << "Taille: " << result.size() << " bytes" << std::endl;
         std::cout << "✓ Test unpack OK" << std::endl;
-        g
+        
 
     } catch (const std::exception& e) {
         std::cerr << "✗ Erreur: " << e.what() << std::endl;

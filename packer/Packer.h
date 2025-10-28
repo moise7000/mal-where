@@ -36,29 +36,29 @@ public:
 
     /**
     * Fonction qui compresse et chiffre un message
-    * @param m Le message chiffré et compressé sous forme de vecteur de bytes
+    * @param m Le message clair sous forme de vecteur de bytes
     * @param originalSize La taille originale du message avant compression
-    * @return Le message déchiffré et décompressé sous forme de vecteur de bytes
+    * @return Le message compressé et chiffré sous forme de vecteur de bytes
     */
     std::vector<unsigned char> pack(const std::vector<unsigned char>& m, size_t originalSize) const;
 
     /**
     * Fonction qui compresse et chiffre un message (retourne un string)
-    * @param m Le message chiffré et compressé sous forme de vecteur de bytes
+    * @param m Le message clair sous forme de vecteur de bytes
     * @param originalSize La taille originale du message avant compression
-    * @return Le message déchiffré et décompressé sous forme de string
+    * @return Le message compressé et chiffré sous forme de string
     */
     std::string packToString(const std::vector<unsigned char>& m, size_t originalSize) const;
 
     /**
     * Change la clé de chiffrement
-    * @param newKey La nouvelle clé de déchiffrement
+    * @param newKey La nouvelle clé de chiffrement
     */
     void setKey(const std::string& newKey);
 
     /**
     * Change la clé de chiffrement avec encodage
-    * @param newKey La nouvelle clé de déchiffrement
+    * @param newKey La nouvelle clé de chiffrement
     * @param encoding Type d'encodage de la clé
     */
     void setKey(const std::string& newKey, KeyEncoding::Type encoding);

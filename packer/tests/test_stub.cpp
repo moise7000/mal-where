@@ -66,13 +66,13 @@ void testConstructorWithEncoding() {
     std::cout << "\n=== Test 2: Constructeur avec encodage ===" << std::endl;
 
     try {
-        Packer packerPlain("ma_cle", KeyEncoding::PLAIN);
+        Stub StubPlain("ma_cle", KeyEncoding::PLAIN);
         printGreen("Constructeur PLAIN OK");
 
-        Packer packerB64("bWFfY2xl", KeyEncoding::BASE64);
+        Stub StubB64("bWFfY2xl", KeyEncoding::BASE64);
         printGreen("Constructeur BASE64 OK");
 
-        Packer packerB32("NV4SA3TPOI======", KeyEncoding::BASE32);
+        Stub StubB32("NV4SA3TPOI======", KeyEncoding::BASE32);
         printGreen("Constructeur BASE32 OK");
     } catch (const std::exception& e) {
         printRed(std::string(" Erreur: ") + e.what());
@@ -84,7 +84,7 @@ void testUnpackSimple() {
     std::cout << "\n=== Test 3: Déchiffrement et décompression (unpack) ===" << std::endl;
 
     try {
-        Packer packer("MaSuperCleSecrete123");
+        Stub Stub("MaSuperCleSecrete123");
 
         unsigned char packed_array[] = {
             0x06, 0x82, 0x87, 0x8f, 0x82, 0x90, 0x19, 0xbc,
@@ -97,7 +97,7 @@ void testUnpackSimple() {
         std::cout << "Message chiffré/compressé: ";
         printBytes(packed);
 
-        std::vector<unsigned char> result = packer.unpack(packed, originalSize);
+        std::vector<unsigned char> result = Stub.unpack(packed, originalSize);
 
         std::cout << "Message déchiffré/décompressé: ";
         printBytes(result);
@@ -112,7 +112,7 @@ void testUnpackSimple() {
 // Fonction principale de test
 int main() {
     printYellow("========================================");
-    printYellow("   TESTS DE LA CLASSE PACKER");
+    printYellow("   TESTS DE LA CLASSE Stub");
     printYellow("========================================");
 
     testConstructorBasic();

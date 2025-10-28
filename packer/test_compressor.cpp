@@ -6,7 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
-#include "compressor.h"
+#include "Compressor.h"
 
 // Fonction pour afficher les données en hexadécimal
 void printHex(const std::vector<unsigned char>& data, const std::string& label) {

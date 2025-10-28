@@ -4,6 +4,21 @@
 
 This project is part of the "Malware et rétro-ingénierie" course taught by Guillaume Bonfante. 
 
+## Evaluation Requirements
+
+| Criteria                | ?   |
+|-------------------------|-----|
+| Anti-Debug mechanism    | []  |
+| Anti-Debug Checksum     | []  |
+| Syntaxic obfuscation    | []  |
+| Switch functions        | []  |
+| Packer                  | [x] |
+| Self modifying function | []  |
+| Attack on the VM        | []  |
+
+
+
+
 
 ## Program Specification
 

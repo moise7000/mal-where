@@ -5,86 +5,55 @@
 #define COMPRESSOR_H
 
 #include <vector>
-#include <cstring>
+#include <string>
 #include <stdexcept>
-#include <sstream>
-#include <zlib.h>
 
-namespace compressor {
-    // Fonction helper pour convertir int en string (std::to_string n'existe pas en C++98)
-    inline std::string toString(int value) {
-        std::ostringstream oss;
-        oss << value;
-        return oss.str();
-    }
+namespace Compressor {
+    /**
+     * Fonction helper pour convertir int en string (std::to_string n'existe pas en C++98)
+     */
+    std::string toString(int value);
 
-    // Compresse un tableau de bytes
-    inline std::vector<unsigned char> compress(const unsigned char* data, size_t size, int level) {
-        if (size == 0) {
-            return std::vector<unsigned char>();
-        }
+    /**
+     * Compresse un tableau de bytes avec un niveau de compression spécifié
+     * @param data Pointeur vers les données à compresser
+     * @param size Taille des données
+     * @param level Niveau de compression (0-9, ou Z_DEFAULT_COMPRESSION)
+     * @return Vecteur contenant les données compressées
+     */
+    std::vector<unsigned char> compress(const unsigned char* data, size_t size, int level);
 
-        // Calcule la taille maximale après compression
-        uLongf compressedSize = compressBound(size);
-        std::vector<unsigned char> compressed(compressedSize);
+    /**
+     * Compresse un vecteur de bytes avec un niveau de compression spécifié
+     * @param data Vecteur des données à compresser
+     * @param level Niveau de compression (0-9, ou Z_DEFAULT_COMPRESSION)
+     * @return Vecteur contenant les données compressées
+     */
+    std::vector<unsigned char> compress(const std::vector<unsigned char>& data, int level);
 
-        // Effectue la compression
-        int result = compress2(
-            compressed.data(),
-            &compressedSize,
-            reinterpret_cast<const Bytef*>(data),
-            size,
-            level
-        );
+    /**
+     * Compresse un vecteur de bytes avec le niveau de compression par défaut
+     * @param data Vecteur des données à compresser
+     * @return Vecteur contenant les données compressées
+     */
+    std::vector<unsigned char> compress(const std::vector<unsigned char>& data);
 
-        if (result != Z_OK) {
-            throw std::runtime_error("Erreur lors de la compression: " + toString(result));
-        }
+    /**
+     * Décompresse des données
+     * @param data Pointeur vers les données compressées
+     * @param compressedSize Taille des données compressées
+     * @param originalSize Taille originale des données avant compression
+     * @return Vecteur contenant les données décompressées
+     */
+    std::vector<unsigned char> decompress(const unsigned char* data, size_t compressedSize, size_t originalSize);
 
-        // Redimensionne le vecteur à la taille réelle
-        compressed.resize(compressedSize);
-        return compressed;
-    }
-
-    // Surcharge pour std::vector avec valeur par défaut
-    inline std::vector<unsigned char> compress(const std::vector<unsigned char>& data, int level) {
-        return compress(&data[0], data.size(), level);
-    }
-
-    // Surcharge sans niveau de compression (utilise Z_DEFAULT_COMPRESSION)
-    inline std::vector<unsigned char> compress(const std::vector<unsigned char>& data) {
-        return compress(&data[0], data.size(), Z_DEFAULT_COMPRESSION);
-    }
-
-    // Décompresse des données
-    inline std::vector<unsigned char> decompress(const unsigned char* data, size_t compressedSize, size_t originalSize) {
-        if (compressedSize == 0) {
-            return std::vector<unsigned char>();
-        }
-
-        std::vector<unsigned char> decompressed(originalSize);
-        uLongf decompressedSize = originalSize;
-
-        // Effectue la décompression
-        int result = uncompress(
-            decompressed.data(),
-            &decompressedSize,
-            data,
-            compressedSize
-        );
-
-        if (result != Z_OK) {
-            throw std::runtime_error("Erreur lors de la décompression: " + toString(result));
-        }
-
-        decompressed.resize(decompressedSize);
-        return decompressed;
-    }
-
-    // Surcharge pour std::vector
-    inline std::vector<unsigned char> decompress(const std::vector<unsigned char>& data, size_t originalSize) {
-        return decompress(&data[0], data.size(), originalSize);
-    }
+    /**
+     * Décompresse un vecteur de bytes
+     * @param data Vecteur des données compressées
+     * @param originalSize Taille originale des données avant compression
+     * @return Vecteur contenant les données décompressées
+     */
+    std::vector<unsigned char> decompress(const std::vector<unsigned char>& data, size_t originalSize);
 }
 
 #endif // COMPRESSOR_H

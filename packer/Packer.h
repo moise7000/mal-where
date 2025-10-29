@@ -2,7 +2,7 @@
 // Created by ewan decima on 10/28/25.
 //
 /**|--------------------------------------------------------------------------------------------|
-*  |  /!\  Cette classe n'a pas pour objectif d'etre présent dans l'éxecutable final.       /!\ |
+*  |  /!\  Cette classe n'a pas pour objectif d'être présente dans l'éxecutable final.      /!\ |
 *  |--------------------------------------------------------------------------------------------|
 */
 #ifndef MAL_WHERE_PACKER_H

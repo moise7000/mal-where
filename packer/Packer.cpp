@@ -32,10 +32,12 @@ Packer::~Packer() { delete cipher; }
 */
 std::vector<unsigned char> Packer::pack(const std::vector<unsigned char>& m, size_t originalSize) const {
     //TODO : Compression des données
-    std::vector<unsigned char> compressed = Compressor::comress(m)
+    std::vector<unsigned char> compressed = Compressor::compress(m);
 
     //TODO : Chiffrement des données compressées
-    std::vector<unsigned char> encrypted = cipher->encryptBytes(compressed)
+    std::vector<unsigned char> encrypted = cipher->encryptBytes(compressed);
+
+    return encrypted;
 }
 
 /**

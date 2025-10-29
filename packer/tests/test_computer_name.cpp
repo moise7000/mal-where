@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "computername.h"
+#include "../ComputerName.h"
 
 int main() {
     std::string computerName = getName();
@@ -16,5 +16,5 @@ int main() {
         return 1;
     }
 
-    return 0;
+    return 0;g
 }

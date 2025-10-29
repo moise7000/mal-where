@@ -2,12 +2,12 @@
 // Created by ewan decima on 10/28/25.
 //
 
-#ifndef MAL_WHERE_PACKER_H
-#define MAL_WHERE_PACKER_H
+#ifndef MAL_WHERE_STUB_H
+#define MAL_WHERE_STUB_H
 #include "Compressor.h"
 #include "Cipher.h"
 
-class Packer {
+class Stub {
 private:
     Cipher* cipher;
 
@@ -16,19 +16,19 @@ public:
     * Constructeur avec la clé de chiffrement
     * @param cipherKey La clé utiliser pour le chiffrement
     */
-    explicit Packer(const std::string& cipherKey);
+    explicit Stub(const std::string& cipherKey);
 
     /**
     * Constructeur avec la clé et encodage
     * @param cipherKey La clé utilisée pour le chiffrement
     * @param encoding Type d'encodage de la clé (PLAIN, BASE64, BASE32)
     */
-    Packer(const std::string& cipherKey, KeyEncoding::Type encoding);
+    Stub(const std::string& cipherKey, KeyEncoding::Type encoding);
 
     /**
     * Destructeur
     */
-    ~Packer();
+    ~Stub();
 
     /**
     * Fonction qui déchiffre et décompresse un message

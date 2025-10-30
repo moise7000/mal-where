@@ -3,9 +3,10 @@
 //
 
 #include "../packer/Cipher.h"
+#include "TestingTools.h"
 #include <iostream>
 #include <iomanip>
-
+/**
 void printBytes(const std::string& label, const unsigned char* data, size_t size) {
     std::cout << label << " ";
     for (size_t i = 0; i < size; i++) {
@@ -25,6 +26,7 @@ void printVector(const std::string& label, const std::vector<unsigned char>& dat
     }
     std::cout << std::dec << std::endl;
 }
+*/
 
 int main() {
     try {
@@ -35,7 +37,7 @@ int main() {
         std::cout << "=== Chiffrement de tableau de bytes ===" << std::endl << std::endl;
 
         // Affichage des données originales
-        printBytes("Données originales:", code, originalSize);
+        TestingTools::printBytes("Données originales:", code, originalSize);
         std::cout << "Taille: " << originalSize << " bytes" << std::endl << std::endl;
 
         // Création du cipher avec une clé
@@ -51,7 +53,7 @@ int main() {
 
         // Chiffrement
         std::vector<unsigned char> encrypted = cipher.encryptBytes(dataVec);
-        printVector("Données chiffrées:", encrypted);
+        TestingTools::printVector("Données chiffrées:", encrypted);
 
         // Affichage en hexadécimal
         std::string hexEncrypted = Cipher::bytesToHex(encrypted);
@@ -59,7 +61,7 @@ int main() {
 
         // Déchiffrement
         std::vector<unsigned char> decrypted = cipher.decryptBytes(encrypted);
-        printVector("Données déchiffrées:", decrypted);
+        TestingTools::printVector("Données déchiffrées:", decrypted);
         std::cout << std::endl;
 
         // Vérification

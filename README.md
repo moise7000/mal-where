@@ -4,9 +4,53 @@
 
 This project is part of the "Malware et rétro-ingénierie" course taught by Guillaume Bonfante. 
 
+## Tests
+You can find few tests in the folder `tests`, you can run old the tests at once by running:
+```sh
+build.bat tests
+```
+and then delete all the executables by running 
+```sh
+build.bat clean
+```
+
+## Project Structure
+
+```
+├── build.bat
+├── CppStandardLibFunctions.md
+├── obfuscator
+│   ├── CppMultiObfuscator.py
+│   ├── CppObfuscator.py
+│   └── MappingApplicator.py
+├── packer
+│   ├── Cipher.cpp
+│   ├── Cipher.h
+│   ├── Compressor.cpp
+│   ├── Compressor.h
+│   ├── ComputerName.cpp
+│   ├── ComputerName.h
+│   ├── Packer.cpp
+│   ├── Packer.h
+│   ├── Stub.cpp
+│   └── Stub.h
+├── Printf_assembly.asm
+├── Printf.cpp
+├── README.md
+├── subject.pdf
+└── tests
+    ├── test_cipher.cpp
+    ├── test_compressor.cpp
+    ├── test_computer_name.cpp
+    ├── test_packing_mechanism.cpp
+    ├── test_stub.cpp
+    ├── TestingTools.cpp
+    └── TestingTools.h
+```
+
+
+
 ## Evaluation Requirements
-
-
 - [ ] Anti-Debug mechanism    
 - [ ] Anti-Debug Checksum     
 - [ ] Syntaxic obfuscation    
@@ -14,7 +58,6 @@ This project is part of the "Malware et rétro-ingénierie" course taught by Gui
 - [x] Packer                  
 - [ ] Self modifying function 
 - [ ] Attack on the VM        
-
 
 
 
@@ -35,15 +78,6 @@ The program displays the input string provided by the user on the console.
 
 
 
-## Project Structure
-
-```
-project/
-├── README.md           # This file
-├── malicious           # The executable
-├── presentation.pdf    # Oral presentation slides
-└── analysis.pdf        # 1-2 page analysis document
-```
 
 
 ## Notes

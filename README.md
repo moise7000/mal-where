@@ -58,7 +58,7 @@ build.bat clean
 ## Evaluation Requirements
 - [ ] Anti-Debug mechanism    
 - [ ] Anti-Debug Checksum     
-- [ ] Syntaxic obfuscation    
+- [x] Syntaxic obfuscation    
 - [ ] Switch functions        
 - [x] Packer                  
 - [ ] Self modifying function 

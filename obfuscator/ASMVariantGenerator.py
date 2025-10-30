@@ -262,13 +262,13 @@ def main():
 
     # Vérifie que le fichier existe
     if not os.path.exists(args.input_file):
-        print(f"❌ Erreur: Le fichier '{args.input_file}' n'existe pas")
+        print(f" Erreur: Le fichier '{args.input_file}' n'existe pas")
         return 1
 
-    print(f"📄 Fichier source: {args.input_file}")
-    print(f"🔢 Nombre de variantes: {args.num_variants}")
-    print(f"🔒 Offuscation des labels: activée")
-    print(f"🗑️  Suppression des commentaires: activée\n")
+    print(f" Fichier source: {args.input_file}")
+    print(f" Nombre de variantes: {args.num_variants}")
+    print(f" Offuscation des labels: activée")
+    print(f" Suppression des commentaires: activée\n")
 
     generator = ASMVariantGenerator(args.input_file)
     files = generator.generate_variants(
@@ -278,9 +278,9 @@ def main():
         args.save_mapping
     )
 
-    print(f"\n✅ {len(files)} variantes générées avec succès!")
+    print(f"\n {len(files)} variantes générées avec succès!")
     if args.save_mapping:
-        print(f"📋 Tables de correspondance sauvegardées")
+        print(f" Tables de correspondance sauvegardées")
 
     return 0
 

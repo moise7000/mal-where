@@ -4,17 +4,18 @@
 
 #include <iostream>
 #include "../packer/ComputerName.h"
+#include "TestingTools.h"
 
 int main() {
     std::string computerName = getName();
 
     if (!computerName.empty()) {
-        std::cout << "Nom de l'ordinateur : " << computerName << std::endl;
-        std::cout << "Longueur du nom : " << computerName.length() << std::endl;
+        std::cout << "Computer's name: " << computerName << std::endl;
+        if (computerName == "LHS-PC") TestingTools::printGreen("Test passed"); else TestingTools::printGreen("Test failed");
     } else {
-        std::cout << "Erreur : impossible de recuperer le nom de l'ordinateur" << std::endl;
+        TestingTools::printRed("Error: Unable to retrieve computer name");
         return 1;
     }
 
-    return 0;g
+    return 0;
 }

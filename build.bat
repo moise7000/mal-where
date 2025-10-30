@@ -3,7 +3,7 @@ setlocal
 
 :: Compilateur et flags
 set CXX=g++
-set CXXFLAGS=
+set CXXFLAGS=-lz
 
 :: Noms des exécutables
 set CIPHER=cipher.exe

@@ -1,0 +1,77 @@
+//
+// Created by ewan decima on 10/30/25.
+//
+
+#include "TestingTools.h"
+
+namespace TestingTools {
+
+    void printHex(const std::vector<unsigned char>& data, const std::string& label) {
+        std::cout << label << " (" << data.size() << " bytes):\n";
+        for (size_t i = 0; i < data.size(); ++i) {
+            std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0')
+                      << static_cast<int>(data[i]) << " ";
+            if ((i + 1) % 16 == 0) std::cout << "\n";  // Nouvelle ligne tous les 16 bytes
+        }
+        std::cout << std::dec << "\n\n";  // Retour en décimal
+    }
+
+
+    void printBytes(const std::vector<unsigned char>& data) {
+        std::cout << "[ ";
+        for (size_t i = 0; i < data.size() && i < 20; ++i) {
+            std::cout << static_cast<int>(data[i]) << " ";
+        }
+        if (data.size() > 20) {
+            std::cout << "... (" << data.size() << " bytes total)";
+        }
+        std::cout << " ]" << std::endl;
+    }
+
+
+    void printVector(const std::string& label, const std::vector<unsigned char>& data){
+        std::cout << label << " ";
+        for (size_t i = 0; i < data.size(); i++) {
+            std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0')
+                      << static_cast<int>(data[i]);
+            if (i < data.size() - 1) std::cout << ", ";
+        }
+        std::cout << std::dec << std::endl;
+    }
+
+
+    bool compareVectors(const std::vector<unsigned char>& v1, const std::vector<unsigned char>& v2){
+        if (v1.size() != v2.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < v1.size(); ++i) {
+            if (v1[i] != v2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    void printGreen(const std::string& message){
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(hConsole, 10);
+        std::cout << message << std::endl;
+        SetConsoleTextAttribute(hConsole, 7);
+    }
+
+    void printRed(const std::string& message){
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(hConsole, 12);
+        std::cout << message << std::endl;
+        SetConsoleTextAttribute(hConsole, 7);
+    }
+
+
+    void printYellow(const std::string& message) {
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(hConsole, 14);
+        std::cout << messsage << std::endl;
+        SetConsoleTextAttribute(hConsole, 7);
+    }
+}

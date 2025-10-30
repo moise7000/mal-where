@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "../ComputerName.h"
+#include "../packer/ComputerName.h"
 
 int main() {
     std::string computerName = getName();

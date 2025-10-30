@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include "../Packer.h"
-#include "../Stub.h"
+#include "../packer/Stub.h"
 
 // Fonction helper pour afficher un vecteur en hexadécimal
 void printHex(const std::string& label, const std::vector<unsigned char>& data) {

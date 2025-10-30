@@ -9,6 +9,7 @@
 //
 
 #include "../packer/Stub.h"
+#include "TestingTools.h"
 #include <iostream>
 #include <cassert>
 #include <string>
@@ -22,7 +23,7 @@ void testConstructorBasic() {
     std::cout << "\n=== Test 1: Default ===" << std::endl;
 
     try {
-        Packer packer("ma_cle_secrete");
+        Stub stub_1("ma_cle_secrete");
         TestingTools::printGreen(" Default OK");
     } catch (const std::exception& e) {
         TestingTools::printRed(std::string(" Error: ") + e.what());
@@ -73,7 +74,7 @@ void testUnpackSimple() {
         TestingTools::printGreen(" Test unpack OK");
 
     } catch (const std::exception& e) {
-        printRed(std::string(" Error: ") + e.what());
+        TestingTools::printRed(std::string(" Error: ") + e.what());
     }
 }
 

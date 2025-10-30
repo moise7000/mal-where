@@ -46,7 +46,8 @@ int main() {
 
         // Vérification
         bool success = (dataVec == decrypted);
-        if (success) {TestingTools::printGreen("Test passed")} else {TestingTools::printRed("Test failed")}
+        if (success) TestingTools::printGreen("Test passed"); else TestingTools::printRed("Test failed");
+
 
 
 

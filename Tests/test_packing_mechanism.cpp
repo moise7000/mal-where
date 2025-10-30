@@ -22,7 +22,7 @@ int main() {
     std::vector<unsigned char> originalData(code, code + originalSize);
 
     std::cout << "1. Original data:" << std::endl;
-    TestingTools::printHex("Original", originalData);
+    TestingTools::printHex(originalData, "Original",);
     std::cout << std::endl;
 
     // Clé de chiffrement
@@ -35,7 +35,7 @@ int main() {
         Packer packer(key);
         std::vector<unsigned char> packed = packer.pack(originalData, originalSize);
 
-        TestingTools::printHex("   Packed", packed);
+        TestingTools::printHex(packed, "Packed");
         std::cout << "   Compression rate: "
                   << originalSize << " -> " << packed.size()
                   << " bytes" << std::endl << std::endl;
@@ -45,7 +45,7 @@ int main() {
         Stub stub(key);
         std::vector<unsigned char> unpacked = stub.unpack(packed, originalSize);
 
-        TestingTools::printHex("Unpacked", unpacked);
+        TestingTools::printHex(unpacked, "Unpacked");
         std::cout << std::endl;
 
         // === COMPARAISON ===

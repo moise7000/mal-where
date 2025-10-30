@@ -22,7 +22,7 @@ int main() {
     std::vector<unsigned char> originalData(code, code + originalSize);
 
     std::cout << "1. Original data:" << std::endl;
-    TestingTools::printHex(originalData, "Original"g);
+    TestingTools::printHex(originalData, "Original");
     std::cout << std::endl;
 
     // Clé de chiffrement

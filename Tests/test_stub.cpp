@@ -62,7 +62,7 @@ void testUnpackSimple() {
         std::vector<unsigned char> packed(packed_array, packed_array + sizeof(packed_array));
         size_t originalSize = sizeof(packed_array);
 
-        std::cout << "Message chiffré/compressé: ";
+        std::cout << "Encrypted/compressed message: ";
         TestingTools::printBytes(packed);
 
         std::vector<unsigned char> result = Stub.unpack(packed, originalSize);
@@ -73,7 +73,7 @@ void testUnpackSimple() {
         TestingTools::printGreen(" Test unpack OK");
 
     } catch (const std::exception& e) {
-        printRed(std::string("✗ Erreur: ") + e.what());
+        printRed(std::string(" Error: ") + e.what());
     }
 }
 

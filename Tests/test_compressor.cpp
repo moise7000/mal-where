@@ -9,18 +9,7 @@
 #include <zlib.h>
 #include "../packer/Compressor.h"
 #include "TestingTools.h"
-/**
-// Fonction pour afficher les données en hexadécimal
-void printHex(const std::vector<unsigned char>& data, const std::string& label) {
-    std::cout << label << " (" << data.size() << " bytes):\n";
-    for (size_t i = 0; i < data.size(); ++i) {
-        std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0')
-                  << static_cast<int>(data[i]) << " ";
-        if ((i + 1) % 16 == 0) std::cout << "\n";  // Nouvelle ligne tous les 16 bytes
-    }
-    std::cout << std::dec << "\n\n";  // Retour en décimal
-}
-*/
+
 
 
 int main() {
@@ -51,7 +40,7 @@ int main() {
         // Vérification
         bool identical = (decompressed.size() == originalSize) &&
                         (std::memcmp(&decompressed[0], code, originalSize) == 0);
-        if (identical) {TestingTools::printGreen("Test passed (identical data)")} else {TestingTools::printRed("Test failed")}
+        if (identical) TestingTools::printGreen("Test passed (identical data)"); else TestingTools::printRed("Test failed");
 
 
     } catch (const std::exception& e) {

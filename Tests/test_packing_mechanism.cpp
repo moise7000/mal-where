@@ -53,10 +53,10 @@ int main() {
         bool identical = TestingTools::compareVectors(originalData, unpacked);
 
         if (identical) {
-            TestingTools::printGreen("Test passed (identical data)")
+            TestingTools::printGreen("Test passed (identical data)");
 
         } else {
-            TestingTools::printRed("Test failed")
+            TestingTools::printRed("Test failed");
             std::cout << "   Original size: " << originalData.size()
                       << ", Size after unpack: " << unpacked.size() << std::endl;
         }

@@ -5,6 +5,10 @@
 #ifndef MAL_WHERE_TESTINGTOOLS_H
 #define MAL_WHERE_TESTINGTOOLS_H
 
+#include <vector>
+#include <string>
+
+
 namespace TestingTools {
 
 
@@ -39,12 +43,12 @@ namespace TestingTools {
     /**
     *
     */
-    void printRed(const std::stirng& message);
+    void printRed(const std::string& message);
 
     /**
     *
     */
-    void printYellow(const stirng& message);
+    void printYellow(const std::string& message);
 
 }
 

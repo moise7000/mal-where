@@ -3,6 +3,13 @@
 //
 
 #include "TestingTools.h"
+#include <iostream>
+#include <iomanip>
+#include <cassert>
+#include <windows.h>
+
+
+using namespace std;
 
 namespace TestingTools {
 
@@ -71,7 +78,7 @@ namespace TestingTools {
     void printYellow(const std::string& message) {
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleTextAttribute(hConsole, 14);
-        std::cout << messsage << std::endl;
+        std::cout << message << std::endl;
         SetConsoleTextAttribute(hConsole, 7);
     }
 }

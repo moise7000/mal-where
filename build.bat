@@ -21,14 +21,20 @@ if "%1"=="tests" (
         goto test_single
     )
 )
+if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
-echo Usage: build.bat [tests [TEST_NAME]^|clean]
+echo Usage: build.bat [test [TEST_NAME]^|tests^|clean]
 echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR
 goto end
 
 :test_single
 set TEST_NAME=%2
+if "%TEST_NAME%"=="" (
+    echo ERROR: Please specify a test name
+    echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR
+    goto error
+)
 call :compile_%TEST_NAME%
 if errorlevel 1 goto error
 call :run_%TEST_NAME%
@@ -149,4 +155,4 @@ echo ========================================
 exit /b 1
 
 :end
-endlocalg
+endlocal

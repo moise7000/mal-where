@@ -9,6 +9,11 @@ You can find few tests in the folder `tests`, you can run old the tests at once 
 ```sh
 build.bat tests
 ```
+or for a single test (for exemple for testing the file `tests/test_cipher.cpp`) 
+```sh
+build.bat test CIPHER
+```
+
 and then delete all the executables by running 
 ```sh
 build.bat clean

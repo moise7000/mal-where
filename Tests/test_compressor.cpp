@@ -8,7 +8,8 @@
 #include <cstring>
 #include <zlib.h>
 #include "../packer/Compressor.h"
-
+#include "TestingTools.h"
+/**
 // Fonction pour afficher les données en hexadécimal
 void printHex(const std::vector<unsigned char>& data, const std::string& label) {
     std::cout << label << " (" << data.size() << " bytes):\n";
@@ -19,6 +20,8 @@ void printHex(const std::vector<unsigned char>& data, const std::string& label) 
     }
     std::cout << std::dec << "\n\n";  // Retour en décimal
 }
+*/
+
 
 int main() {
     // Données d'origine
@@ -28,30 +31,31 @@ int main() {
     try {
         // Afficher les données originales
         std::vector<unsigned char> original(code, code + originalSize);
-        printHex(original, "Données originales");
+        TestingTools::printHex(original, "Original Data");
 
         // Compression
         std::vector<unsigned char> compressed = Compressor::compress(code, originalSize, Z_DEFAULT_COMPRESSION);
-        std::cout << "Taille originale: " << originalSize << " bytes\n";
-        std::cout << "Taille compressée: " << compressed.size() << " bytes\n\n";
+        std::cout << "Original size: " << originalSize << " bytes\n";
+        std::cout << "Compressed size: " << compressed.size() << " bytes\n\n";
 
         // Afficher les données compressées
-        printHex(compressed, "Données compressées");
+        TestingTools::printHex(compressed, "Compressed data");
 
         // Décompression
         std::vector<unsigned char> decompressed = Compressor::decompress(compressed, originalSize);
-        std::cout << "Taille décompressée: " << decompressed.size() << " bytes\n";
+        std::cout << "Decompressed size: " << decompressed.size() << " bytes\n";
 
         // Afficher les données décompressées
-        printHex(decompressed, "Données décompressées");
+        TestingTools::printHex(decompressed, "Decompressed data");
 
         // Vérification
         bool identical = (decompressed.size() == originalSize) &&
                         (std::memcmp(&decompressed[0], code, originalSize) == 0);
-        std::cout << "Données identiques: " << (identical ? "Oui" : "Non") << "\n";
+        if (identical) {TestingTools::printGreen("Test passed (identical data)")} else {TestingTools::printRed("Test failed")}
+
 
     } catch (const std::exception& e) {
-        std::cerr << "Erreur: " << e.what() << "\n";
+        std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
 

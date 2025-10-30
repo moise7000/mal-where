@@ -36,6 +36,17 @@ namespace TestingTools {
     }
 
 
+    void printBytes(const std::string& label, const unsigned char* data, size_t size) {
+        std::cout << label << " ";
+        for (size_t i = 0; i < size; i++) {
+            std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0')
+                      << static_cast<int>(data[i]);
+            if (i < size - 1) std::cout << ", ";
+        }
+        std::cout << std::dec << std::endl;
+    }
+
+
     void printVector(const std::string& label, const std::vector<unsigned char>& data){
         std::cout << label << " ";
         for (size_t i = 0; i < data.size(); i++) {

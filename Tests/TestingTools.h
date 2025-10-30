@@ -24,6 +24,8 @@ namespace TestingTools {
     void printBytes(const std::vector<unsigned char>& data);
 
 
+    void printBytes(const std::string& label, const unsigned char* data, size_t size);
+
     /**
     *
     */

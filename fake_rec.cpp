@@ -44,11 +44,11 @@ FunctionWrapper<R, Arg> make_wrapper(R (*f)(Arg)) {
  */
 template <typename F>
 typename F::result_type fake_recursive(int x, F f, typename F::argument_type arg) {
-    if (x < 0) {
+    if (x <= 0) {
         return typename F::result_type();
     }
     
-    if (x == 0) {
+    if (x == 1) {
         return f(arg);
     } else {
         f(arg); 

@@ -10,7 +10,7 @@ A powerful tool to obfuscate C++ code with multiple obfuscation methods while ma
 ### Obfuscate a single file
 
 ```bash
-python obfuscator.py my_program.cpp
+python3 obfuscator.py my_program.cpp
 ```
 
 Output: `my_program_obfuscated.cpp`
@@ -18,13 +18,13 @@ Output: `my_program_obfuscated.cpp`
 ### Obfuscate multiple files
 
 ```bash
-python obfuscator.py file1.cpp file2.cpp file3.cpp
+python3 obfuscator.py file1.cpp file2.cpp file3.cpp
 ```
 
 ### With mapping persistence
 
 ```bash
-python obfuscator.py *.cpp --mapping project.json
+python3 obfuscator.py *.cpp --mapping project.json
 ```
 
 ## 🛠️ Obfuscation Methods
@@ -45,13 +45,13 @@ The script provides 7 obfuscation methods:
 
 ```bash
 # Only rename variables and functions
-python obfuscator.py code.cpp -m variables functions
+python3 obfuscator.py code.cpp -m variables functions
 
 # All methods except arithmetic
-python obfuscator.py code.cpp -m variables functions junk conditions comments strings
+python3 obfuscator.py code.cpp -m variables functions junk conditions comments strings
 
 # All methods (default)
-python obfuscator.py code.cpp -m all
+python3 obfuscator.py code.cpp -m all
 
 ```
 
@@ -59,16 +59,16 @@ python obfuscator.py code.cpp -m all
 
 ```
 # Case 1: First pass - creates the mapping
-python obfuscator.py main.cpp utils.cpp --save-mapping mapping.json
+python3 obfuscator.py main.cpp utils.cpp --save-mapping mapping.json
 
 # Case 2: Add more files with the same mapping
-python obfuscator.py network.cpp database.cpp --load-mapping mapping.json --save-mapping mapping.json
+python3 obfuscator.py network.cpp database.cpp --load-mapping mapping.json --save-mapping mapping.json
 
 # Case 3: Simplified version (load AND save)
-python obfuscator.py *.cpp --mapping project_mapping.json
+python3 obfuscator.py *.cpp --mapping project_mapping.json
 
 # Case 4: With specific methods
-python obfuscator.py *.cpp --mapping map.json -m variables functions strings
+python3 obfuscator.py *.cpp --mapping map.json -m variables functions strings
 ```
 
 ## Mapping Management
@@ -79,21 +79,21 @@ The mapping system allows you to obfuscate multiple files consistently: the same
 
 ```bash
 # Obfuscate and save the mapping
-python obfuscator.py main.cpp utils.cpp --save-mapping mapping.json
+python3 obfuscator.py main.cpp utils.cpp --save-mapping mapping.json
 ```
 
 ### Use an existing mapping
 
 ```bash
 # Load the mapping to obfuscate other files
-python obfuscator.py network.cpp database.cpp --load-mapping mapping.json
+python3 obfuscator.py network.cpp database.cpp --load-mapping mapping.json
 ```
 
 ### Load AND save (recommended)
 
 ```bash
 # Use --mapping to load existing mapping and update it
-python obfuscator.py *.cpp --mapping project.json
+python3 obfuscator.py *.cpp --mapping project.json
 ```
 
 
@@ -102,7 +102,7 @@ python obfuscator.py *.cpp --mapping project.json
 ##  Complete Options
 
 ```bash
-python obfuscator.py [OPTIONS] file1.cpp [file2.cpp ...]
+python3 obfuscator.py [OPTIONS] file1.cpp [file2.cpp ...]
 ```
 
 ### Positional arguments
@@ -170,7 +170,7 @@ int main() {
 ### Command
 
 ```bash
-python obfuscator.py main.cpp --mapping test.json
+python3 obfuscator.py main.cpp --mapping test.json
 ```
 
 ### Obfuscated file: `main_obfuscated.cpp` (example)

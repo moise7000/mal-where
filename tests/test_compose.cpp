@@ -1,4 +1,4 @@
-#include "../compose.cpp"
+#include "../obfuscation_methods/compose.cpp"
 #include <iostream>
 #include <string>
 #include <sstream>

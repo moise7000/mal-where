@@ -20,27 +20,27 @@ int main() {
     try {
         // Afficher les données originales
         std::vector<unsigned char> original(code, code + originalSize);
-        TestingTools::printHex(original, "Original Data");
+        //TestingTools::printHex(original, "Original Data");
 
         // Compression
         std::vector<unsigned char> compressed = Compressor::compress(code, originalSize, Z_DEFAULT_COMPRESSION);
-        std::cout << "Original size: " << originalSize << " bytes\n";
-        std::cout << "Compressed size: " << compressed.size() << " bytes\n\n";
+        //std::cout << "Original size: " << originalSize << " bytes\n";
+        //std::cout << "Compressed size: " << compressed.size() << " bytes\n\n";
 
         // Afficher les données compressées
-        TestingTools::printHex(compressed, "Compressed data");
+        //TestingTools::printHex(compressed, "Compressed data");
 
         // Décompression
         std::vector<unsigned char> decompressed = Compressor::decompress(compressed, originalSize);
-        std::cout << "Decompressed size: " << decompressed.size() << " bytes\n";
+        //std::cout << "Decompressed size: " << decompressed.size() << " bytes\n";
 
         // Afficher les données décompressées
-        TestingTools::printHex(decompressed, "Decompressed data");
+        //TestingTools::printHex(decompressed, "Decompressed data");
 
         // Vérification
         bool identical = (decompressed.size() == originalSize) &&
                         (std::memcmp(&decompressed[0], code, originalSize) == 0);
-        if (identical) TestingTools::printGreen("Test passed (identical data)"); else TestingTools::printRed("Test failed");
+        if (identical) TestingTools::printGreen("Test passed: identical data"); else TestingTools::printRed("Test failed: not identical data");
 
 
     } catch (const std::exception& e) {

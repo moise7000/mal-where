@@ -11,6 +11,8 @@ set COMPUTER=computer.exe
 set STUB=stub.exe
 set PACKING=packing.exe
 set COMPRESSOR=compressor.exe
+SET COMPOSE=compose.exe
+set FAKE_REC=fake_rec.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -25,7 +27,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|clean]
-echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR
+echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC
 goto end
 
 :test_single
@@ -62,6 +64,12 @@ if errorlevel 1 goto error
 call :compile_COMPRESSOR
 if errorlevel 1 goto error
 
+call :compile_COMPOSE
+if errorlevel 1 goto error
+
+call :compile_FAKE_REC
+if errorlevel 1 goto error
+
 echo.
 echo ========================================
 echo Running tests...
@@ -73,6 +81,9 @@ call :run_COMPUTER
 call :run_STUB
 call :run_PACKING
 call :run_COMPRESSOR
+call :run_COMPOSE
+call :run_FAKE_REC
+
 
 echo.
 echo ========================================
@@ -106,6 +117,16 @@ echo Compiling %COMPRESSOR%...
 %CXX% -o %COMPRESSOR% packer/Compressor.cpp tests/TestingTools.cpp tests/test_compressor.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
+:compile_COMPOSE
+echo Compiling %COMPOSE%...
+%CXX% -o %COMPOSE% obfuscation_methods/compose.cpp tests/TestingTools.cpp tests/test_compose.cpp %CXXFLAGS%
+exit /b %errorlevel%
+
+:compile_FAKE_REC
+echo Compiling %FAKE_REC%...
+%CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %CXXFLAGS%
+exit /b %errorlevel%
+
 :: Run functions
 :run_CIPHER
 echo === Test Cipher ===
@@ -137,6 +158,18 @@ echo === Test Compressor ===
 echo.
 exit /b 0
 
+:run_COMPOSE
+echo === Test Compose ===
+%COMPOSE%
+echo.
+exit /b 0
+
+:run_FAKE_REC
+echo === Test Fake rec ===
+%FAKE_REC%
+echo.
+exit /b 0
+
 :clean
 echo Cleaning executables...
 if exist %CIPHER% del %CIPHER%
@@ -144,6 +177,8 @@ if exist %COMPUTER% del %COMPUTER%
 if exist %STUB% del %STUB%
 if exist %PACKING% del %PACKING%
 if exist %COMPRESSOR% del %COMPRESSOR%
+if exist %COMPOSE% del %COMPOSE%
+if exist %FAKE_REC% del %FAKE_REC%
 echo Cleaning completed.
 goto end
 

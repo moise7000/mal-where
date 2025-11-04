@@ -124,7 +124,7 @@ exit /b %errorlevel%
 
 :compile_FAKE_REC
 echo Compiling %FAKE_REC%...
-%CXX% -o %FAKE_REC% obfuscation/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %CXXFLAGS%
+%CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
 :: Run functions

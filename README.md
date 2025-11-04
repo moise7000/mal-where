@@ -22,12 +22,23 @@ build.bat clean
 ## Project Structure
 
 ```
+├── asm
+│   └── Printf.asm
 ├── build.bat
-├── CppStandardLibFunctions.md
+├── documentation
+│   ├── CppStandardLibFunctions.md
+│   └── subject.pdf
+├── malicious_echo.cpp
+├── obfuscation_methods
+│   ├── avoir _un_fichier.txt
+│   ├── avoir_un_fichier.txt
+│   ├── compose.cpp
+│   ├── fake_rec.cpp
+│   └── Printf.cpp
 ├── obfuscator
-│   ├── CppMultiObfuscator.py
-│   ├── CppObfuscator.py
-│   └── MappingApplicator.py
+│   ├── ASMVariantGenerator.py
+│   ├── DocumentationObfuscator.md
+│   └── Obfuscator.py
 ├── packer
 │   ├── Cipher.cpp
 │   ├── Cipher.h
@@ -39,18 +50,19 @@ build.bat clean
 │   ├── Packer.h
 │   ├── Stub.cpp
 │   └── Stub.h
-├── Printf_assembly.asm
-├── Printf.cpp
 ├── README.md
-├── subject.pdf
 └── tests
     ├── test_cipher.cpp
+    ├── test_compose.cpp
     ├── test_compressor.cpp
     ├── test_computer_name.cpp
+    ├── test_fake_rec.cpp
+    ├── test_malicious_echo.cpp
     ├── test_packing_mechanism.cpp
     ├── test_stub.cpp
     ├── TestingTools.cpp
     └── TestingTools.h
+
 ```
 
 

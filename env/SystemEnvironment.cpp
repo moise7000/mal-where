@@ -23,4 +23,16 @@ namespace systemEnvironment {
         }
     }
 
+
+    std::string getTempPath() {
+        char buffer[MAX_PATH + 1];
+        DWORD length = GetTempPathA(MAX_PATH + 1, buffer);
+
+        if (length > 0 && length <= MAX_PATH) {
+            return std::string(buffer);
+        }
+
+        return "";
+    }
+
 }

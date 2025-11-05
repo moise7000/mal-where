@@ -11,6 +11,8 @@ namespace systemEnvironment {
 
     std::string getProcessorArchitecture();
 
+    std::string getTempPath();
+
 
 }
 

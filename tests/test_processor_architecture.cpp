@@ -7,7 +7,7 @@
 
 int main() {
 
-    const std::string processorArchitecture = systemEnvironment::getPocessorArchitecture();
+    const std::string processorArchitecture = systemEnvironment::getProcessorArchitecture();
 
     const bool passed = processorArchitecture == "x64";
     if (passed) TestingTools::printGreen("Test passed: AMD64 architecture"); else TestingTools::printGreen("Test failed");

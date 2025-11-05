@@ -9,7 +9,7 @@
 
 namespace systemEnvironment {
 
-    std::string getPocessorArchitecture();
+    std::string getProcessorArchitecture();
 
 
 }

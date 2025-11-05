@@ -13,6 +13,7 @@ set PACKING=packing.exe
 set COMPRESSOR=compressor.exe
 SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
+set PROCESSOR_ARCHITECTURE=processor_architecture.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -70,6 +71,9 @@ if errorlevel 1 goto error
 call :compile_FAKE_REC
 if errorlevel 1 goto error
 
+call :compile_PROCESSOR_ARCHITECTURE
+if errorlevel 1 goto error
+
 echo.
 echo ========================================
 echo Running tests...
@@ -83,6 +87,7 @@ call :run_PACKING
 call :run_COMPRESSOR
 call :run_COMPOSE
 call :run_FAKE_REC
+call :run_PROCESSOR_ARCHITECTURE
 
 
 echo.
@@ -125,6 +130,11 @@ exit /b %errorlevel%
 :compile_FAKE_REC
 echo Compiling %FAKE_REC%...
 %CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %CXXFLAGS%
+exit /b %errorlevel%
+
+:compile_PROCESSOR_ARCHITECTURE
+echo Compiling %PROCESSOR_ARCHITECTURE%...
+%CXX% -o %PROCESSOR_ARCHITECTURE% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_processor_architecture.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
 :: Run functions
@@ -170,6 +180,12 @@ echo === Test Fake rec ===
 echo.
 exit /b 0
 
+:run_PROCESSOR_ARCHITECTURE
+echo === Test Processor Architecture ===
+%PROCESSOR_ARCHITECTURE%
+echo.
+exit /b 0
+
 :clean
 echo Cleaning executables...
 if exist %CIPHER% del %CIPHER%
@@ -179,6 +195,7 @@ if exist %PACKING% del %PACKING%
 if exist %COMPRESSOR% del %COMPRESSOR%
 if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
+if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 echo Cleaning completed.
 goto end
 

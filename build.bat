@@ -150,55 +150,55 @@ exit /b %errorlevel%
 
 :: Run functions
 :run_CIPHER
-echo === Test Cipher ===
+echo *** Test Cipher ***
 %CIPHER%
 echo.
 exit /b 0
 
 :run_COMPUTER
-echo === Test Computer Name ===
+echo *** Test Computer Name ***
 %COMPUTER%
 echo.
 exit /b 0
 
 :run_STUB
-echo === Test Stub ===
+echo *** Test Stub ***
 %STUB%
 echo.
 exit /b 0
 
 :run_PACKING
-echo === Test Packing ===
+echo *** Test Packing ***
 %PACKING%
 echo.
 exit /b 0
 
 :run_COMPRESSOR
-echo === Test Compressor ===
+echo *** Test Compressor ***
 %COMPRESSOR%
 echo.
 exit /b 0
 
 :run_COMPOSE
-echo === Test Compose ===
+echo *** Test Compose ***
 %COMPOSE%
 echo.
 exit /b 0
 
 :run_FAKE_REC
-echo === Test Fake rec ===
+echo *** Test Fake rec ***
 %FAKE_REC%
 echo.
 exit /b 0
 
 :run_PROCESSOR_ARCHITECTURE
-echo === Test Processor Architecture ===
+echo *** Test Processor Architecture ***
 %PROCESSOR_ARCHITECTURE%
 echo.
 exit /b 0
 
 :run_TMP
-echo === Test temp path ===
+echo *** Test temp path ***
 %TMP%
 echo.
 exit /b 0

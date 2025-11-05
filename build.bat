@@ -14,7 +14,7 @@ set COMPRESSOR=compressor.exe
 SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
 set PROCESSOR_ARCHITECTURE=processor_architecture.exe
-set TMP=tmp_path.exe
+set TMP_PATH=tmp_path.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -75,7 +75,7 @@ if errorlevel 1 goto error
 call :compile_PROCESSOR_ARCHITECTURE
 if errorlevel 1 goto error
 
-call :compile_TMP
+call :compile_TMP_PATH
 if errorlevel 1 goto error
 
 
@@ -93,7 +93,7 @@ call :run_COMPRESSOR
 call :run_COMPOSE
 call :run_FAKE_REC
 call :run_PROCESSOR_ARCHITECTURE
-call :run_TMP
+call :run_TMP_PATH
 
 
 echo.
@@ -143,9 +143,9 @@ echo Compiling %PROCESSOR_ARCHITECTURE%...
 %CXX% -o %PROCESSOR_ARCHITECTURE% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_processor_architecture.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
-:compile_TMP
-echo Compiling %TMP%...
-%CXX% -o %TMP% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %CXXFLAGS%
+:compile_TMP_PATH
+echo Compiling %TMP_PATH%...
+%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
 :: Run functions
@@ -197,7 +197,7 @@ echo *** Test Processor Architecture ***
 echo.
 exit /b 0
 
-:run_TMP
+:run_TMP_PATH
 echo *** Test temp path ***
 %TMP%
 echo.
@@ -213,7 +213,7 @@ if exist %COMPRESSOR% del %COMPRESSOR%
 if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
 if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
-if exist %TMP% del %TMP%
+if exist %TMP_PATH% del %TMP_PATH%
 echo Cleaning completed.
 goto end
 

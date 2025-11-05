@@ -14,6 +14,7 @@ set COMPRESSOR=compressor.exe
 SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
 set PROCESSOR_ARCHITECTURE=processor_architecture.exe
+set TMP=tmp.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -44,9 +45,9 @@ call :run_%TEST_NAME%
 goto end
 
 :tests_all
-echo ========================================
-echo Compiling tests...
-echo ========================================
+echo ********************************************
+echo *          Compiling tests...              *
+echo ********************************************
 echo.
 
 :: Compile each executable
@@ -74,10 +75,14 @@ if errorlevel 1 goto error
 call :compile_PROCESSOR_ARCHITECTURE
 if errorlevel 1 goto error
 
+call :compile_TMP
+if errorlevel 1 goto error
+
+
 echo.
-echo ========================================
-echo Running tests...
-echo ========================================
+echo ********************************************
+echo *          Running tests...                *
+echo ********************************************
 echo.
 
 call :run_CIPHER
@@ -88,12 +93,13 @@ call :run_COMPRESSOR
 call :run_COMPOSE
 call :run_FAKE_REC
 call :run_PROCESSOR_ARCHITECTURE
+call :run_TMP
 
 
 echo.
-echo ========================================
-echo All tests completed
-echo ========================================
+echo ********************************************
+echo *           All tests completed            *
+echo ********************************************
 goto end
 
 :: Compilation functions
@@ -135,6 +141,11 @@ exit /b %errorlevel%
 :compile_PROCESSOR_ARCHITECTURE
 echo Compiling %PROCESSOR_ARCHITECTURE%...
 %CXX% -o %PROCESSOR_ARCHITECTURE% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_processor_architecture.cpp %CXXFLAGS%
+exit /b %errorlevel%
+
+:compile_TMP
+echo Compiling %TMP%...
+%CXX% -o %TMP% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
 :: Run functions
@@ -186,6 +197,12 @@ echo === Test Processor Architecture ===
 echo.
 exit /b 0
 
+:run_TMP
+echo === Test temp path ===
+%TMP%
+echo.
+exit /b 0
+
 :clean
 echo Cleaning executables...
 if exist %CIPHER% del %CIPHER%
@@ -196,14 +213,15 @@ if exist %COMPRESSOR% del %COMPRESSOR%
 if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
 if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
+if exist %TMP% del %TMP%
 echo Cleaning completed.
 goto end
 
 :error
 echo.
-echo ========================================
-echo ERROR: Compilation failed
-echo ========================================
+echo ********************************************
+echo *        ERROR: Compilation failed         *
+echo ********************************************
 exit /b 1
 
 :end

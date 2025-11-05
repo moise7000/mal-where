@@ -199,7 +199,7 @@ exit /b 0
 
 :run_TMP_PATH
 echo *** Test temp path ***
-%TMP%
+%TMP_PATH%
 echo.
 exit /b 0
 

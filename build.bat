@@ -14,7 +14,7 @@ set COMPRESSOR=compressor.exe
 SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
 set PROCESSOR_ARCHITECTURE=processor_architecture.exe
-set TMP=tmp.exe
+set TMP=tmp_path.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean

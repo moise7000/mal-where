@@ -210,29 +210,26 @@ Digest sha256(const std::string& message) {
 }
 
 // =================================================================
-// FONCTION POUR L'ATTAQUANT
+// FONCTIONS UTILITAIRES
 // =================================================================
 
 /**
- * @brief Fonction de hachage H pour l'attaquant.
+ * @brief Fonction de hachage qui retourne une chaîne hexadécimale.
  * 
- * L'attaquant connaît cette fonction et peut l'utiliser avec hashcat
- * pour retrouver K à partir de X = H(K).
- * 
- * @param key La clé K.
- * @return Le digest X.
+ * @param input La chaîne d'entrée à hasher.
+ * @return Le digest en format hexadécimal.
  */
-std::string hash_function(const std::string& key) {
-    return sha256(key).to_hex();
+std::string hash_function(const std::string& input) {
+    return sha256(input).to_hex();
 }
 
 /**
- * @brief Vérifie si un digest correspond à une clé.
+ * @brief Vérifie si un digest correspond à une entrée.
  * 
- * @param key La clé candidate.
+ * @param input L'entrée à vérifier.
  * @param digest Le digest à vérifier (format hexadécimal).
- * @return true si H(key) == digest, false sinon.
+ * @return true si hash(input) == digest, false sinon.
  */
-bool verify_hash(const std::string& key, const std::string& digest) {
-    return hash_function(key) == digest;
+bool verify_hash(const std::string& input, const std::string& digest) {
+    return hash_function(input) == digest;
 }

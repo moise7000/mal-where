@@ -13,6 +13,7 @@ set PACKING=packing.exe
 set COMPRESSOR=compressor.exe
 SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
+set HASH_FUNCTION=hash_function.exe
 set PROCESSOR_ARCHITECTURE=processor_architecture.exe
 set TMP_PATH=tmp_path.exe
 
@@ -29,7 +30,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|clean]
-echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC
+echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, HASH_FUNCTION
 goto end
 
 :test_single
@@ -72,6 +73,9 @@ if errorlevel 1 goto error
 call :compile_FAKE_REC
 if errorlevel 1 goto error
 
+call :compile_HASH_FUNCTION
+if errorlevel 1 goto error
+
 call :compile_PROCESSOR_ARCHITECTURE
 if errorlevel 1 goto error
 
@@ -92,6 +96,7 @@ call :run_PACKING
 call :run_COMPRESSOR
 call :run_COMPOSE
 call :run_FAKE_REC
+call :run_HASH_FUNCTION
 call :run_PROCESSOR_ARCHITECTURE
 call :run_TMP_PATH
 
@@ -136,6 +141,11 @@ exit /b %errorlevel%
 :compile_FAKE_REC
 echo Compiling %FAKE_REC%...
 %CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %CXXFLAGS%
+exit /b %errorlevel%
+
+:compile_HASH_FUNCTION
+echo Compiling %HASH_FUNCTION%...
+%CXX% -o %HASH_FUNCTION% obfuscation_methods/hash_function.cpp tests/TestingTools.cpp tests/test_hash_function.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_PROCESSOR_ARCHITECTURE
@@ -191,6 +201,12 @@ echo *** Test Fake rec ***
 echo.
 exit /b 0
 
+:run_HASH_FUNCTION
+echo *** Test Hash Function ***
+%HASH_FUNCTION%
+echo.
+exit /b 0
+
 :run_PROCESSOR_ARCHITECTURE
 echo *** Test Processor Architecture ***
 %PROCESSOR_ARCHITECTURE%
@@ -212,6 +228,7 @@ if exist %PACKING% del %PACKING%
 if exist %COMPRESSOR% del %COMPRESSOR%
 if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
+if exist %HASH_FUNCTION% del %HASH_FUNCTION%
 if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 if exist %TMP_PATH% del %TMP_PATH%
 echo Cleaning completed.

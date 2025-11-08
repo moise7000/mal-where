@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
-#include "hash_function.cpp"
+#include "../obfuscation_methods/hash_function.cpp"
+#include "TestingTools.h"
 
 // =================================================================
 // FONCTIONS UTILITAIRES POUR LES TESTS

@@ -3,7 +3,7 @@ setlocal
 
 :: Compiler and flags
 set CXX=g++
-set WINDERS=windres
+set WINDRES=windres
 set CXXFLAGS=-lz
 set RESOURCES_RC=resources.rc
 set RESOURCES_OBJ=resources.o

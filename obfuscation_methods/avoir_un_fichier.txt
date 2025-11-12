@@ -1,6 +1,0 @@
-# exemple (remplace <branche> et <chemin/dans/repo/cipher.cpp>)
-curl -L -o cipher.cpp \
-  https://raw.githubusercontent.com/moise7000/Malware-Telecom/<branche>/<chemin/dans/repo/cipher.cpp
-# ou
-wget -O cipher.cpp \
-  https://raw.githubusercontent.com/moise7000/Malware-Telecom/<branche>/<chemin/dans/repo/cipher.cpp

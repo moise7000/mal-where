@@ -3,7 +3,10 @@ setlocal
 
 :: Compiler and flags
 set CXX=g++
+set WINDRES=windres
 set CXXFLAGS=-lz
+set RESOURCES_RC=resources.rc
+set RESOURCES_OBJ=resources.o
 
 :: Executable names
 set CIPHER=cipher.exe
@@ -18,6 +21,7 @@ set TMP_PATH=tmp_path.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
+if "%1"=="resources" goto compile_resources
 if "%1"=="tests" (
     if "%2"=="" (
         goto tests_all
@@ -28,8 +32,32 @@ if "%1"=="tests" (
 if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
-echo Usage: build.bat [test [TEST_NAME]^|tests^|clean]
+echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
 echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC
+echo.
+echo Commands:
+echo   build.bat                - Compile and run all tests
+echo   build.bat resources      - Compile only resources.rc
+echo   build.bat test TEST_NAME - Compile and run specific test
+echo   build.bat clean          - Remove all executables and resources
+goto end
+
+
+
+:compile_resources
+echo ********************************************
+echo *       Compiling resources.rc...          *
+echo ********************************************
+if not exist %RESOURCES_RC% (
+    echo ERROR: %RESOURCES_RC% not found!
+    goto error
+)
+%WINDRES% %RESOURCES_RC% -O coff -o %RESOURCES_OBJ%
+if errorlevel 1 (
+    echo ERROR: Failed to compile resources
+    goto error
+)
+echo Resources compiled successfully: %RESOURCES_OBJ%
 goto end
 
 :test_single
@@ -39,6 +67,11 @@ if "%TEST_NAME%"=="" (
     echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR
     goto error
 )
+
+:: Compile resources first
+call :compile_resources
+if errorlevel 1 goto error
+
 call :compile_%TEST_NAME%
 if errorlevel 1 goto error
 call :run_%TEST_NAME%
@@ -48,6 +81,12 @@ goto end
 echo ********************************************
 echo *          Compiling tests...              *
 echo ********************************************
+echo.
+
+:: Compile resources first
+call :compile_resources
+if errorlevel 1 goto error
+
 echo.
 
 :: Compile each executable
@@ -105,47 +144,47 @@ goto end
 :: Compilation functions
 :compile_CIPHER
 echo Compiling %CIPHER%...
-%CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp %CXXFLAGS%
+%CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPUTER
 echo Compiling %COMPUTER%...
-%CXX% -o %COMPUTER% packer/ComputerName.cpp tests/TestingTools.cpp tests/test_computer_name.cpp %CXXFLAGS%
+%CXX% -o %COMPUTER% packer/ComputerName.cpp tests/TestingTools.cpp tests/test_computer_name.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_STUB
 echo Compiling %STUB%...
-%CXX% -o %STUB% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_stub.cpp %CXXFLAGS%
+%CXX% -o %STUB% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_stub.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_PACKING
 echo Compiling %PACKING%...
-%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_packing_mechanism.cpp %CXXFLAGS%
+%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_packing_mechanism.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPRESSOR
 echo Compiling %COMPRESSOR%...
-%CXX% -o %COMPRESSOR% packer/Compressor.cpp tests/TestingTools.cpp tests/test_compressor.cpp %CXXFLAGS%
+%CXX% -o %COMPRESSOR% packer/Compressor.cpp tests/TestingTools.cpp tests/test_compressor.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPOSE
 echo Compiling %COMPOSE%...
-%CXX% -o %COMPOSE% obfuscation_methods/compose.cpp tests/TestingTools.cpp tests/test_compose.cpp %CXXFLAGS%
+%CXX% -o %COMPOSE% obfuscation_methods/compose.cpp tests/TestingTools.cpp tests/test_compose.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_FAKE_REC
 echo Compiling %FAKE_REC%...
-%CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %CXXFLAGS%
+%CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_PROCESSOR_ARCHITECTURE
 echo Compiling %PROCESSOR_ARCHITECTURE%...
-%CXX% -o %PROCESSOR_ARCHITECTURE% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_processor_architecture.cpp %CXXFLAGS%
+%CXX% -o %PROCESSOR_ARCHITECTURE% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_processor_architecture.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_TMP_PATH
 echo Compiling %TMP_PATH%...
-%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %CXXFLAGS%
+%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :: Run functions
@@ -214,6 +253,7 @@ if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
 if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 if exist %TMP_PATH% del %TMP_PATH%
+if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.
 goto end
 

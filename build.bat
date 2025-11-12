@@ -253,6 +253,7 @@ if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
 if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 if exist %TMP_PATH% del %TMP_PATH%
+if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.
 goto end
 

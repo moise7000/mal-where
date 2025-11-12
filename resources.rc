@@ -1,5 +1,5 @@
 #include "resources.h"
 
-IDR_README_MD RCDATA "obfuscation_methods\\github\\README.md"
-IDR_DOCUMENTATION_MD RCDATA "obfuscation_methods\\github\\Documentation.md"Documentation.md""
-IDR_README_MD RCDATA "obfuscation_methods\\github\\file.txt"gi
+IDR_README_MD RCDATA "README.md"
+IDR_DOCUMENTATION_MD RCDATA "Documentation.md"
+IDR_FILE_TXT RCDATA "file.txt"

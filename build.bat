@@ -5,8 +5,8 @@ setlocal
 set CXX=g++
 set WINDERS=windres
 set CXXFLAGS=-lz
-set RESOURCES_RC=obfuscation_methods\github\resources.rc
-set RESOURCES_OBJ=obfuscation_methods\github\resources.o
+set RESOURCES_RC=resources.rc
+set RESOURCES_OBJ=resources.o
 
 :: Executable names
 set CIPHER=cipher.exe

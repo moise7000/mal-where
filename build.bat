@@ -3,7 +3,10 @@ setlocal
 
 :: Compiler and flags
 set CXX=g++
+set WINDERS=windres
 set CXXFLAGS=-lz
+set RESOURCES_RC=obfuscation_methods\github\resources.rc
+set RESOURCES_OBJ=obfuscation_methods\github\resources.o
 
 :: Executable names
 set CIPHER=cipher.exe
@@ -18,6 +21,7 @@ set TMP_PATH=tmp_path.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
+if "%1"=="resources" goto compile_resources
 if "%1"=="tests" (
     if "%2"=="" (
         goto tests_all
@@ -28,8 +32,32 @@ if "%1"=="tests" (
 if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
-echo Usage: build.bat [test [TEST_NAME]^|tests^|clean]
+echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
 echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC
+echo.
+echo Commands:
+echo   build.bat                - Compile and run all tests
+echo   build.bat resources      - Compile only resources.rc
+echo   build.bat test TEST_NAME - Compile and run specific test
+echo   build.bat clean          - Remove all executables and resources
+goto end
+
+
+
+:compile_resources
+echo ********************************************
+echo *       Compiling resources.rc...          *
+echo ********************************************
+if not exist %RESOURCES_RC% (
+    echo ERROR: %RESOURCES_RC% not found!
+    goto error
+)
+%WINDRES% %RESOURCES_RC% -O coff -o %RESOURCES_OBJ%
+if errorlevel 1 (
+    echo ERROR: Failed to compile resources
+    goto error
+)
+echo Resources compiled successfully: %RESOURCES_OBJ%
 goto end
 
 :test_single

@@ -38,6 +38,14 @@ public:
     */
     std::vector<unsigned char> unpack(const std::vector<unsigned char>& m, size_t originalSize) const;
 
+
+    /**
+     * Fonction qui déchiffre et décompresse un entier
+     * @param packed Le vecteur de bytes compressé et chiffré
+     * @return L'entier original
+     */
+    int unpack(const std::vector<unsigned char>& packed) const;
+
     /**
     * Fonction qui déchiffre et décompresse un message (retourne un string)
     * @param m Le message chiffré et compressé sous forme de vecteur de bytes

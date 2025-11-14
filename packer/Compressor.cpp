@@ -92,4 +92,40 @@ namespace Compressor {
         return decompress(&data[0], data.size(), originalSize);
     }
 
+    // Compresse un entier avec niveau de compression
+    std::vector<unsigned char> compress(int value, int level) {
+        // Convertir l'entier en bytes (4 bytes pour un int)
+        std::vector<unsigned char> data(4);
+        data[0] = (value >> 24) & 0xFF;
+        data[1] = (value >> 16) & 0xFF;
+        data[2] = (value >> 8) & 0xFF;
+        data[3] = value & 0xFF;
+
+        // Compresser les bytes
+        return compress(data, level);
+    }
+
+    // Compresse un entier avec niveau de compression par défaut
+    std::vector<unsigned char> compress(int value) {
+        return compress(value, Z_DEFAULT_COMPRESSION);
+    }
+
+    // Décompresse un entier
+    int decompressInt(const std::vector<unsigned char>& data) {
+        // Décompresser les données (taille originale = 4 bytes)
+        std::vector<unsigned char> decompressed = decompress(data, 4);
+
+        if (decompressed.size() != 4) {
+            throw std::runtime_error("Erreur: taille incorrecte après décompression de l'entier");
+        }
+
+        // Reconvertir en int
+        int result = 0;
+        result |= (static_cast<int>(decompressed[0]) << 24);
+        result |= (static_cast<int>(decompressed[1]) << 16);
+        result |= (static_cast<int>(decompressed[2]) << 8);
+        result |= static_cast<int>(decompressed[3]);
+
+        return result;
+    }
 } // namespace Compressor

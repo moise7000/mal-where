@@ -61,6 +61,16 @@ public:
     std::string decrypt(const std::string& encrypted) const;
 
     /**
+     * Chiffre un entier
+    */
+     int encrypt(const int i) const;
+
+    /**
+     * Déchiffre un entier
+    */
+
+    int decrypt(const int i) const;
+    /**
      * Chiffre un tableau de bytes
      */
     std::vector<unsigned char> encryptBytes(const std::vector<unsigned char>& data) const;

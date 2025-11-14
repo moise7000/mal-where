@@ -50,6 +50,18 @@ public:
     */
     std::string packToString(const std::vector<unsigned char>& m, size_t originalSize) const;
 
+
+    /**
+    * Fonction qui compresse et chiffre un entier
+    * @param value L'entier à packer
+    * @return Le vecteur de bytes compressé et chiffré
+    */
+    std::vector<unsigned char> pack(int value) const;
+
+
+
+
+
     /**
     * Change la clé de chiffrement
     * @param newKey La nouvelle clé de chiffrement

@@ -11,6 +11,7 @@
 #include "TestingTools.h"
 
 
+bool operator==(int lhs, const std::vector<unsigned char> & rhs);
 
 int main() {
     // Données d'origine
@@ -18,29 +19,25 @@ int main() {
     size_t originalSize = sizeof(code);
 
     try {
-        // Afficher les données originales
+
         std::vector<unsigned char> original(code, code + originalSize);
-        //TestingTools::printHex(original, "Original Data");
-
-        // Compression
         std::vector<unsigned char> compressed = Compressor::compress(code, originalSize, Z_DEFAULT_COMPRESSION);
-        //std::cout << "Original size: " << originalSize << " bytes\n";
-        //std::cout << "Compressed size: " << compressed.size() << " bytes\n\n";
-
-        // Afficher les données compressées
-        //TestingTools::printHex(compressed, "Compressed data");
-
-        // Décompression
         std::vector<unsigned char> decompressed = Compressor::decompress(compressed, originalSize);
-        //std::cout << "Decompressed size: " << decompressed.size() << " bytes\n";
 
-        // Afficher les données décompressées
-        //TestingTools::printHex(decompressed, "Decompressed data");
 
-        // Vérification
         bool identical = (decompressed.size() == originalSize) &&
                         (std::memcmp(&decompressed[0], code, originalSize) == 0);
-        if (identical) TestingTools::printGreen("Test passed: identical data"); else TestingTools::printRed("Test failed: not identical data");
+        if (identical) TestingTools::printGreen("Test passed: compress/decompress bytes"); else TestingTools::printRed("Test failed: compress/decompress bytes");
+
+
+
+
+        const int originalInt = 123456789;
+        const std::vector<unsigned char> compressedInt = Compressor::compress(originalInt);
+        int const decompressedInt = Compressor::decompressInt(compressedInt);
+        TestingTools::printVector("Compressed int:", compressedInt);
+        const bool success = (originalInt == decompressedInt);
+        if (success) TestingTools::printGreen("Test passed: compress/decompress int"); else TestingTools::printRed("Test failed: compress/decompress int");
 
 
     } catch (const std::exception& e) {

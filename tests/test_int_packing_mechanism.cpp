@@ -9,15 +9,19 @@
 #include <iomanip>
 
 
+std::ostream operator<<(const std::ostream & lhs, const std::vector<unsigned char> & rhs);
+
 int main() {
 
     const std::string KEY = "LHS-PC";
-    Packer packer(KEY);
-    Stub stub(KEY);
+    const Packer packer(KEY);
+    const Stub stub(KEY);
 
     const int originalInt = 987654321;
     const std::vector<unsigned char> packedInt = packer.pack(originalInt);
+    TestingTools::printVector("[DEBUG] Packed int:", packedInt);
     const int unpackedInt = stub.unpack(packedInt);
+    std::cout << "[DEBUG] Unpacked int: " << unpackedInt << std::endl;
     const bool success = (originalInt == unpackedInt);
 
     if (success)

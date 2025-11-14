@@ -120,7 +120,7 @@ exit /b %errorlevel%
 
 :compile_PACKING
 echo Compiling %PACKING%...
-%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_packing_mechanism.cpp %CXXFLAGS%
+%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_int_packing_mechanism.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPRESSOR

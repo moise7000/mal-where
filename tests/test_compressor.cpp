@@ -35,7 +35,7 @@ int main() {
         const int originalInt = 123456789;
         const std::vector<unsigned char> compressedInt = Compressor::compress(originalInt);
         int const decompressedInt = Compressor::decompressInt(compressedInt);
-        std::cout << "Compressed int: " << compressedInt << std::endl;
+        TestingTools::printVector("Compressed int:", compressedInt);
         const bool success = (originalInt == decompressedInt);
         if (success) TestingTools::printGreen("Test passed: compress/decompress int"); else TestingTools::printRed("Test failed: compress/decompress int");
 

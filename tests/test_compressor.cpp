@@ -32,7 +32,7 @@ int main() {
 
 
 
-        const int originalInt = 123456789;
+        const int originalInt = 111223333789;
         const std::vector<unsigned char> compressedInt = Compressor::compress(originalInt);
         int const decompressedInt = Compressor::decompressInt(compressedInt);
         std::cout << "Compressed int: " << decompressedInt << std::endl;

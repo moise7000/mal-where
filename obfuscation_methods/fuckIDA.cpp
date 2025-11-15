@@ -4,10 +4,10 @@
 
 #include "fuckIDA.h"
 
-
 #include <vector>
 #include <iostream>
 #include <cstring>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -18,24 +18,25 @@
 JmpChainFunc generateJumpChain(size_t N) {
     const size_t JMP_SIZE = 5;
     // Payload simple : ret
-    std::vector<uint8_t> payload = { 0xC3 };
+    std::vector<uint8_t> payload;
+    payload.push_back(0xC3);
     size_t totalSize = N * JMP_SIZE + payload.size();
 
     // Allouer mémoire exécutable
     uint8_t* mem;
 #ifdef _WIN32
-    mem = (uint8_t*)VirtualAlloc(nullptr, totalSize,
+    mem = (uint8_t*)VirtualAlloc(NULL, totalSize,
                                  MEM_COMMIT | MEM_RESERVE,
                                  PAGE_EXECUTE_READWRITE);
 #else
-    mem = (uint8_t*)mmap(nullptr, totalSize,
+    mem = (uint8_t*)mmap(NULL, totalSize,
                          PROT_READ | PROT_WRITE | PROT_EXEC,
                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #endif
 
-    if(mem == nullptr) {
+    if(mem == NULL) {
         std::cerr << "Memory allocation failed\n";
-        return nullptr;
+        return NULL;
     }
 
     // Générer les N JMP
@@ -55,7 +56,7 @@ JmpChainFunc generateJumpChain(size_t N) {
     }
 
     // Écrire payload
-    memcpy(mem + N * JMP_SIZE, payload.data(), payload.size());
+    memcpy(mem + N * JMP_SIZE, &payload[0], payload.size());
 
     // Retourner fonction exécutable
     return reinterpret_cast<JmpChainFunc>(mem);

@@ -5,16 +5,16 @@
 #ifndef MAL_WHERE_FUCKIDA_H
 #define MAL_WHERE_FUCKIDA_H
 
-#include <cstdint>
 #include <cstddef>
+#include <stdint.h>
 
 // Type générique de fonction générée
-using JmpChainFunc = void(*)();
+typedef void(*JmpChainFunc)();
 
 /**
 * Génère en mémoire exécutable une longue chaîne de JMP rel32.
 * @param N : nombre de sauts à générer
-* @return : pointeur vers la fonction générée, ou nullptr en cas d'erreur
+* @return : pointeur vers la fonction générée, ou NULL en cas d'erreur
 */
 JmpChainFunc generateJumpChain(size_t N);
 

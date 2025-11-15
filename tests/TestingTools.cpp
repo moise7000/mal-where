@@ -5,8 +5,10 @@
 #include "TestingTools.h"
 #include <iostream>
 #include <iomanip>
+#include <string>
+#include <sstream>
 #include <cassert>
-//#include <windows.h>
+#include <windows.h>
 
 
 using namespace std;
@@ -92,4 +94,44 @@ namespace TestingTools {
         std::cout << message << std::endl;
         SetConsoleTextAttribute(hConsole, 7);
     }
+
+
+
+
+    std::string stringToBinary(const std::string &input) {
+        std::string result;
+        for (size_t i = 0; i < input.size(); ++i) {
+            unsigned char c = input[i];
+            for (int j = 7; j >= 0; --j) {
+                result += ((c >> j) & 1) ? '1' : '0';
+            }
+        }
+        return result;
+    }
+
+    std::string binaryToString(const std::string &input) {
+        std::string result;
+        if (input.size() % 8 != 0) {
+            // La longueur doit être un multiple de 8
+            return "";
+        }
+
+        for (size_t i = 0; i < input.size(); i += 8) {
+            unsigned char c = 0;
+            for (int j = 0; j < 8; ++j) {
+                if (input[i + j] == '1') {
+                    c |= (1 << (7 - j));
+                } else if (input[i + j] != '0') {
+                    // caractère invalide
+                    return "";
+                }
+            }
+            result += c;
+        }
+        return result;
+    }
+
+
+
+
 }

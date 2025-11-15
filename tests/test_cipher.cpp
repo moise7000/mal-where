@@ -38,6 +38,28 @@ int main() {
             if (secondSuccess) TestingTools::printGreen("Test 2 passed: int encryption"); else TestingTools::printRed("Test failed: int encryption");
         }
 
+        const std::string message = "printf";
+        std::string encryptedString = cipher.encrypt(message);
+        const bool temp2 = (message == encryptedString);
+        if (temp2) TestingTools::printRed("Test 3 failed: string encryption"); else {
+            std::string decryptedString = cipher.decrypt(encryptedString);
+            const bool thirdSuccess = (message == decryptedString);
+            if (thirdSuccess) TestingTools::printGreen("Test 3 passed: string encrytion/decryption"); else TestingTools::printRed("Test failed: string encryption/decryption");
+        }
+
+
+
+        unsigned char bytes[] = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
+        std::vector<unsigned char> originalBytes(bytes, bytes + 6);
+        std::vector<unsigned char> encryptedSingle = cipher.encryptBytes(originalBytes);
+        std::vector<unsigned char> decryptedSingle = cipher.decryptBytes(encryptedSingle);
+
+
+        if (originalBytes == decryptedSingle && encryptedSingle[0] != originalBytes[0]) {
+            TestingTools::printGreen("Test 3 passed: single byte encryption/decryption");
+        } else {
+            TestingTools::printRed("Test 3 failed: single byte test");
+        }
 
 
 

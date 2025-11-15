@@ -89,6 +89,10 @@ namespace TestingTools {
      */
     void printYellow(const std::string& message);
 
+    std::string stringToBinary(const std::string &input);
+
+    std::string binaryToString(const std::string &input);
+
 }
 
 

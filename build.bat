@@ -21,6 +21,7 @@ set FAKE_REC=fake_rec.exe
 set PROCESSOR_ARCHITECTURE=processor_architecture.exe
 set TMP_PATH=tmp_path.exe
 set SHA=sha.exe
+set CALL=call_printf.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -37,7 +38,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
-echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC
+echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL
 echo.
 echo Commands:
 echo   build.bat                - Compile and run all tests
@@ -130,6 +131,9 @@ if errorlevel 1 goto error
 call :compile_SHA
 if errorlevel 1 goto error
 
+call :compile_CALL
+if errorlevel 1 goto error
+
 echo.
 echo ********************************************
 echo *          Running tests...                *
@@ -146,6 +150,7 @@ call :run_FAKE_REC
 call :run_PROCESSOR_ARCHITECTURE
 call :run_TMP_PATH
 call :run_SHA
+call :run_CALL
 
 
 echo.
@@ -214,6 +219,12 @@ echo Compiling %SHA%...
 exit /b %errorlevel%
 
 
+:compile_TMP_PATH
+echo Compiling %TMP_PATH%...
+%CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp tests/TestingTools.cpp tests/test_call_printf.cpp  %CXXFLAGS%
+%CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp tests/TestingTools.cpp tests/test_call_printf.cpp %RESOURCES_OBJ% %CXXFLAGS%
+exit /b %errorlevel%
+
 :: Run functions
 :run_CIPHER
 echo *** Test Cipher ***
@@ -270,8 +281,14 @@ echo.
 exit /b 0
 
 :run_SHA
-echo *** Test temp path ***
+echo *** Test sha function ***
 %SHA%
+echo.
+exit /b 0
+
+:run_CALL
+echo *** Test call printf ***
+%CALL%
 echo.
 exit /b 0
 
@@ -287,6 +304,7 @@ if exist %FAKE_REC% del %FAKE_REC%
 if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 if exist %TMP_PATH% del %TMP_PATH%
 if exist %SHA% del %SHA%
+if exist %CALL% del %CALL%
 
 if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.

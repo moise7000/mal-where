@@ -48,7 +48,7 @@ int main() {
         }
 
 
-        std::cout << "\n=== Test 3: Single byte ===" << std::endl;
+
         unsigned char bytes[] = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
         std::vector<unsigned char> originalBytes(bytes, bytes + 6);
         std::vector<unsigned char> encryptedSingle = cipher.encryptBytes(originalBytes);

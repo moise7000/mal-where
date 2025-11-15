@@ -1,0 +1,257 @@
+
+┌═══════════════════════════════════════════════════════════════┐
+║          PROCESSUS DE CHARGEMENT D'UN EXÉCUTABLE              ║
+└═══════════════════════════════════════════════════════════════┘
+
+PHASE 1: Double-clic sur l'exécutable
+───────────────────────────────────────
+1. Explorer.exe appelle CreateProcess()
+2. CreateProcess() appelle NtCreateUserProcess() (syscall)
+3. Le kernel Windows crée un nouveau processus
+
+┌──────────────────────────────────────────────────────────────┐
+│ Kernel Windows (ntoskrnl.exe)                                │
+├──────────────────────────────────────────────────────────────┤
+│ 1. Crée une structure EPROCESS                               │
+│    - PID (Process ID)                                        │
+│    - Espace d'adressage virtuel vide                         │
+│    - Token de sécurité                                       │
+│                                                              │
+│ 2. Crée un thread principal (ETHREAD)                        │
+│    - TID (Thread ID)                                         │
+│    - Pile (stack) allouée                                    │
+│    - Contexte (registres CPU)                                │
+│                                                              │
+│ 3. Map le fichier .exe dans la mémoire virtuelle             │
+│    - Utilise la Memory Manager                               │
+│    - Crée les mappings page par page                         │
+└──────────────────────────────────────────────────────────────┘
+
+
+PHASE 2: Chargement par ntdll.dll
+──────────────────────────────────
+Le loader Windows (dans ntdll.dll) prend le relais:
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 1: Validation du fichier PE                            │
+├──────────────────────────────────────────────────────────────┤
+│ LdrpMapDll():                                                │
+│   ✓ Vérifier signature "MZ"                                  │
+│   ✓ Vérifier signature "PE\0\0"                              │
+│   ✓ Vérifier architecture (x86 vs x64)                       │
+│   ✓ Vérifier checksum (optionnel)                            │
+│   ✓ Vérifier signature numérique (si présente)               │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 2: Allocation de l'espace mémoire                      │
+├──────────────────────────────────────────────────────────────┤
+│ NtAllocateVirtualMemory():                                   │
+│                                                              │
+│   Adresse de base préférée: 0x0000000140000000 (ImageBase)   │
+│   Taille: SizeOfImage (ex: 0x00030000 = 192 KB)              │
+│                                                              │
+│   Si ASLR activé (DllCharacteristics & 0x0040):              │
+│     → Randomise l'adresse de base                            │
+│     → Ex: 0x00007FF7A2B40000                                 │
+│                                                              │
+│   Mémoire allouée en pages (4 KB):                           │
+│   ┌────────────────┐ 0x00007FF7A2B40000                      │
+│   │    Headers     │                                         │
+│   ├────────────────┤ 0x00007FF7A2B41000                      │
+│   │  .text (RX)    │ ← Code exécutable                       │
+│   ├────────────────┤ 0x00007FF7A2B51000                      │
+│   │  .rdata (R)    │ ← Données constantes                    │
+│   ├────────────────┤ 0x00007FF7A2B59000                      │
+│   │  .data (RW)    │ ← Données modifiables                   │
+│   ├────────────────┤ 0x00007FF7A2B5B000                      │
+│   │  .idata (R)    │ ← Table d'imports                       │
+│   └────────────────┘                                         │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 3: Copie des sections du fichier vers la mémoire       │
+├──────────────────────────────────────────────────────────────┤
+│ Pour chaque section dans le PE:                              │
+│                                                              │
+│   FILE (sur disque)              MEMORY (en RAM)             │
+│   ┌──────────────┐               ┌──────────────┐            │
+│   │ .text        │ ────copy────> │ .text        │            │
+│   │ offset:0x400 │               │ RVA: 0x1000  │            │
+│   │ size: 0x8000 │               │ aligned 4KB  │            │
+│   └──────────────┘               └──────────────┘            │
+│                                                              │
+│ Utilise NtReadFile() ou mapping mémoire                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 4: Application des protections mémoire                 │
+├──────────────────────────────────────────────────────────────┤
+│ NtProtectVirtualMemory():                                    │
+│                                                              │
+│   Section .text:   PAGE_EXECUTE_READ  (RX)                   │
+│   Section .rdata:  PAGE_READONLY      (R)                    │
+│   Section .data:   PAGE_READWRITE     (RW)                   │
+│   Section .rsrc:   PAGE_READONLY      (R)                    │
+│                                                              │
+│   Si DEP/NX activé:                                          │
+│     → Les pages de données ne peuvent PAS être exécutées     │
+│     → Protection contre buffer overflow exploits             │
+└──────────────────────────────────────────────────────────────┘
+
+
+PHASE 3: Résolution des imports
+────────────────────────────────
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 5: Chargement des DLLs dépendantes                     │
+├──────────────────────────────────────────────────────────────┤
+│ LdrpLoadDll():                                               │
+│                                                              │
+│   Pour chaque DLL dans Import Directory:                     │
+│                                                              │
+│   1. "KERNEL32.DLL" trouvée                                  │
+│      ├─ Recherche dans: System32\kernel32.dll                │
+│      ├─ Chargement en mémoire                                │
+│      └─ Adresse de base: 0x00007FF8A1200000                  │
+│                                                              │
+│   2. "USER32.DLL" trouvée                                    │
+│      ├─ Recherche dans: System32\user32.dll                  │
+│      ├─ Chargement en mémoire (+ ses dépendances)            │
+│      │   └─> GDI32.DLL (dépendance de USER32)                │
+│      └─ Adresse de base: 0x00007FF8A2300000                  │
+│                                                              │
+│   3. "MSVCRT.DLL" trouvée                                    │
+│      └─ Chargement...                                        │
+│                                                              │
+│   Ordre de recherche des DLLs:                               │
+│   1. Dossier de l'application                                │
+│   2. System32\                                               │
+│   3. SysWOW64\ (pour 32-bit sur 64-bit)                      │
+│   4. Windows\                                                │
+│   5. Dossier courant                                         │
+│   6. Dossiers dans PATH                                      │
+│                                                              │
+│   ⚠️  DLL Hijacking: Placer une fausse DLL dans le dossier   │
+│       de l'app peut causer son chargement à la place!        │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 6: Résolution des adresses de fonctions (Snap)         │
+├──────────────────────────────────────────────────────────────┤
+│ LdrpSnapIAT():                                               │
+│                                                              │
+│   Pour chaque fonction dans Import Address Table:            │
+│                                                              │
+│   Import: "MessageBoxA" de USER32.DLL                        │
+│   ┌─────────────────────────────────────────┐                │
+│   │ 1. Localiser USER32.DLL en mémoire      │                │
+│   │    → Base: 0x00007FF8A2300000           │                │
+│   │                                         │                │
+│   │ 2. Lire Export Directory de USER32      │                │
+│   │    → Export Address Table (EAT)         │                │
+│   │    → Export Name Table                  │                │
+│   │                                         │                │
+│   │ 3. Chercher "MessageBoxA" dans EAT      │                │
+│   │    → Trouvé à l'index 0x0234            │                │
+│   │    → RVA: 0x00012340                    │                │
+│   │                                         │                │
+│   │ 4. Calculer adresse absolue:            │                │
+│   │    Base + RVA                           │                │
+│   │    = 0x00007FF8A2312340                 │                │
+│   │                                         │                │
+│   │ 5. Écrire l'adresse dans l'IAT:         │                │
+│   │    IAT[index] = 0x00007FF8A2312340      │                │
+│   └─────────────────────────────────────────┘                │
+│                                                              │
+│   Maintenant call [IAT] saute directement vers MessageBoxA!  │
+└──────────────────────────────────────────────────────────────┘
+
+
+PHASE 4: Relocations (si nécessaire)
+─────────────────────────────────────
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 7: Appliquer les relocations                           │
+├──────────────────────────────────────────────────────────────┤
+│ Si ImageBase préférée n'est pas disponible (ASLR):           │
+│                                                              │
+│   ImageBase préférée: 0x0000000140000000                     │
+│   Adresse réelle:     0x00007FF7A2B40000                     │
+│   Delta:              0x00007FF662B40000                     │
+│                                                              │
+│   Pour chaque relocation dans .reloc section:                │
+│                                                              │
+│   mov rax, 0x0000000140001000  ; Adresse absolue codée       │
+│                                  en dur dans le code         │
+│   ↓                                                          │
+│   mov rax, 0x00007FF7A2B41000  ; Corrigée avec le delta      │
+│                                                              │
+│   Ceci permet à l'exécutable de fonctionner à n'importe      │
+│   quelle adresse mémoire (important pour ASLR/sécurité)      │
+└──────────────────────────────────────────────────────────────┘
+
+
+PHASE 5: Initialisation et démarrage
+─────────────────────────────────────
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 8: Appel des initialiseurs TLS                         │
+├──────────────────────────────────────────────────────────────┤
+│ Si Thread Local Storage présent:                             │
+│   → Appel des callbacks TLS                                  │
+│   → Initialisation des variables thread-local                │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ ÉTAPE 9: Exécution du point d'entrée                         │
+├──────────────────────────────────────────────────────────────┤
+│ Le loader prépare le contexte du thread:                     │
+│                                                              │
+│   RIP = ImageBase + AddressOfEntryPoint                      │
+│   RSP = Stack pointer (pile du thread)                       │
+│   RCX = Paramètre (PEB)                                      │
+│                                                              │
+│   Exemple:                                                   │
+│   RIP = 0x00007FF7A2B40000 + 0x1234                          │
+│       = 0x00007FF7A2B41234                                   │
+│                                                              │
+│   Saute vers le point d'entrée:                              │
+│   ┌──────────────────────────────────────┐                   │
+│   │ _start: (CRT startup code)           │                   │
+│   │   call __security_init_cookie        │                   │
+│   │   call _initterm                     │ ← Constructeurs   │
+│   │   call WinMain/main                  │ ← LE  CODE!       │
+│   │   call exit                          │                   │
+│   └──────────────────────────────────────┘                   │
+└──────────────────────────────────────────────────────────────┘
+
+*/
+
+// Exemple simplifié du CRT startup code:
+void __cdecl mainCRTStartup(void) {
+    // 1. Initialiser le système de sécurité
+    __security_init_cookie();
+
+    // 2. Initialiser le heap
+    _heap_init();
+
+    // 3. Obtenir les arguments de ligne de commande
+    int argc;
+    char** argv = __getmainargs(&argc);
+
+    // 4. Obtenir les variables d'environnement
+    char** envp = _environ;
+
+    // 5. Appeler les constructeurs C++ globaux
+    _initterm(__xc_a, __xc_z);
+
+    // 6. Appeler la vraie fonction main()
+    int exitCode = main(argc, argv, envp);
+
+    // 7. Appeler les destructeurs
+    _initterm(__xt_a, __xt_z);
+
+    // 8. Quitter le processus
+    exit(exitCode);
+}

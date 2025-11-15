@@ -1,0 +1,23 @@
+┌─────────────────────────────┐
+│      DOS Header (64 bytes)  │  ← Signature "MZ"
+├─────────────────────────────┤
+│      DOS Stub               │  ← "This program cannot be run in DOS mode"
+├─────────────────────────────┤
+│      PE Signature           │  ← "PE\0\0"
+├─────────────────────────────┤
+│      COFF Header            │  ← Informations sur le fichier
+├─────────────────────────────┤
+│   Optional Header (PE32+)   │  ← Configuration d'exécution
+├─────────────────────────────┤
+│    Section Headers          │  ← Description des sections
+├─────────────────────────────┤
+│      .text Section          │  ← Code exécutable
+├─────────────────────────────┤
+│      .data Section          │  ← Données initialisées
+├─────────────────────────────┤
+│      .rdata Section         │  ← Données en lecture seule
+├─────────────────────────────┤
+│      .idata Section         │  ← Table d'imports
+├─────────────────────────────┤
+│      .rsrc Section          │  ← Ressources (icônes, etc.)
+└─────────────────────────────┘

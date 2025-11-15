@@ -98,7 +98,7 @@ namespace TestingTools {
 
 
 
-    string stringToBinary(const std::string &input) {
+    std::string stringToBinary(const std::string &input) {
         std::string result;
         for (size_t i = 0; i < input.size(); ++i) {
             unsigned char c = input[i];
@@ -109,7 +109,7 @@ namespace TestingTools {
         return result;
     }
 
-    string binaryToString(const std::string &input) {
+    std::string binaryToString(const std::string &input) {
         std::string result;
         if (input.size() % 8 != 0) {
             // La longueur doit être un multiple de 8

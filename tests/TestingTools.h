@@ -91,7 +91,7 @@ namespace TestingTools {
 
     std::string stringToBinary(const std::string &input);
 
-    std::string binaryToString(const std::string &input);gi
+    std::string binaryToString(const std::string &input);
 
 }
 

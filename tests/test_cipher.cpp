@@ -47,14 +47,17 @@ int main() {
             if (thirdSuccess) TestingTools::printGreen("Test 3 passed: string encrytion/decryption"); else TestingTools::printRed("Test failed: string encryption/decryption");
         }
 
-        const std::string message2 = TestingTools::stringToBinary("printf");
-        std::cout << message2 << std::endl;
-        std::string encryptedString2 = cipher.encrypt(message2);
-        std::cout << encryptedString2 << std::endl;
-        std::string decryptedString2 = cipher.decrypt(encryptedString2);
-        std::string out = TestingTools::binaryToString(decryptedString2);
-        if (out == "printf") TestingTools::printGreen("Test 4 passed: binary feature"); else TestingTools::printRed("Test failed: binary feature");
 
+
+        std::vector<unsigned char> originalBytes = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
+        std::vector<unsigned char> encryptedSingle = cipher.encryptBytes(originalBytes);
+        std::vector<unsigned char> decryptedSingle = cipher.decryptBytes(encryptedSingle);
+
+        if (originalBytes == decryptedSingle && encryptedSingle[0] != originalBytes[0]) {
+            TestingTools::printGreen("Test 3 passed: single byte encryption/decryption");
+        } else {
+            TestingTools::printRed("Test 3 failed: single byte test");
+        }
 
 
 

@@ -38,7 +38,7 @@ int main() {
             if (secondSuccess) TestingTools::printGreen("Test 2 passed: int encryption"); else TestingTools::printRed("Test failed: int encryption");
         }
 
-        const std::string message = "printf";
+        const std::string message = "011100000111001001101001011011100111010001100110";
         std::string encryptedString = cipher.encrypt(message);
         const bool temp2 = (message == encryptedString);
         if (temp2) TestingTools::printRed("Test 3 failed: string encryption"); else {
@@ -46,6 +46,7 @@ int main() {
             const bool thirdSuccess = (message == decryptedString);
             if (thirdSuccess) TestingTools::printGreen("Test 3 passed: string encrytion/decryption"); else TestingTools::printRed("Test failed: string encryption/decryption");
         }
+
 
 
 

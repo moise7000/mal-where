@@ -1,45 +1,36 @@
-//
-// Created by ewan decima on 11/15/25.
-//
-
+#include <windows.h>
 #include <stdio.h>
-#include <dlfcn.h>
-#include <stdlib.h>
 
 typedef int (*type_printf)(const char *, ...);
 
 // Fonction qui encapsule le chargement dynamique de printf
 type_printf LoadPrintfFunction() {
-    // Charger la bibliothèque C standard dynamiquement
-    void *libc = dlopen("libc.so.6", RTLD_LAZY);
+    // Charger la bibliothèque msvcrt.dll dynamiquement
+    HMODULE msvcrt = LoadLibraryA("msvcrt.dll");
 
-    if (libc == NULL) {
-        fprintf(stderr, "Erreur lors du chargement de libc: %s\n", dlerror());
+    if (msvcrt == NULL) {
+        fprintf(stderr, "Erreur lors du chargement de msvcrt.dll\n");
         return NULL;
     }
-
-    // Réinitialiser dlerror
-    dlerror();
 
     // Obtenir l'adresse de la fonction printf
-    type_printf f = (type_printf)dlsym(libc, "printf");
+    type_printf f = (type_printf)GetProcAddress(msvcrt, "printf");
 
-    const char *error = dlerror();
-    if (error != NULL) {
-        fprintf(stderr, "Erreur lors de la récupération de printf: %s\n", error);
-        dlclose(libc);
+    if (f == NULL) {
+        fprintf(stderr, "Erreur lors de la recuperation de printf\n");
+        FreeLibrary(msvcrt);
         return NULL;
     }
 
-    // Note: La bibliothèque reste chargée, il faudra la libérer manuellement
+    // Note: La bibliotheque reste chargee, il faudra la liberer manuellement
     return f;
 }
 
-// Fonction pour libérer la bibliothèque
+// Fonction pour liberer la bibliotheque
 void UnloadPrintfFunction() {
-    void *libc = dlopen("libc.so.6", RTLD_NOLOAD);
-    if (libc != NULL) {
-        dlclose(libc);
+    HMODULE msvcrt = GetModuleHandleA("msvcrt.dll");
+    if (msvcrt != NULL) {
+        FreeLibrary(msvcrt);
     }
 }
 
@@ -54,9 +45,9 @@ int main(int argc, char *argv[]) {
     // Utiliser la fonction printf
     f("Hello world\n");
     f("Nombre d'arguments: %d\n", argc);
-    f("Test avec plusieurs paramètres: %s = %d\n", "valeur", 42);
+    f("Test avec plusieurs parametres: %s = %d\n", "valeur", 42);
 
-    // Libérer la bibliothèque
+    // Liberer la bibliotheque
     UnloadPrintfFunction();
 
     return 0;

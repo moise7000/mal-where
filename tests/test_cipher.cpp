@@ -38,6 +38,15 @@ int main() {
             if (secondSuccess) TestingTools::printGreen("Test 2 passed: int encryption"); else TestingTools::printRed("Test failed: int encryption");
         }
 
+        const std::string message = "printf";
+        std::string encryptedString = cipher.encrypt(message);
+        const bool temp = (message == encryptedString);
+        if (temp) TestingTools::printRed("Test 3 failed: string encryption"); else {
+            std::string decryptedString = cipher.decrypt(message);
+            const bool thirdSuccess = (message == decryptedString);
+            if (thirdSuccess) TestingTools::printGreen("Test 3 passed: string encrytion/decryption"); else TestingTools::printRed("Test failed: string encryption/decryption");
+        }
+
 
 
 

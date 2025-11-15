@@ -1,8 +1,5 @@
-#include <windows.h>
+#include "LoadPrintfFunction.h"
 #include <stdio.h>
-
-typedef int (*type_printf)(const char *, ...);
-
 // Fonction qui encapsule le chargement dynamique de printf
 type_printf LoadPrintfFunction() {
     // Charger la bibliothèque msvcrt.dll dynamiquement

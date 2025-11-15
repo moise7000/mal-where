@@ -48,10 +48,12 @@ int main() {
         }
 
 
-
-        std::vector<unsigned char> originalBytes = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
+        std::cout << "\n=== Test 3: Single byte ===" << std::endl;
+        unsigned char bytes[] = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
+        std::vector<unsigned char> originalBytes(bytes, bytes + 6);
         std::vector<unsigned char> encryptedSingle = cipher.encryptBytes(originalBytes);
         std::vector<unsigned char> decryptedSingle = cipher.decryptBytes(encryptedSingle);
+
 
         if (originalBytes == decryptedSingle && encryptedSingle[0] != originalBytes[0]) {
             TestingTools::printGreen("Test 3 passed: single byte encryption/decryption");

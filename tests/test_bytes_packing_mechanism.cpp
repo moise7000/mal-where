@@ -20,7 +20,8 @@ int main() {
     const Packer packer(KEY);
     const Stub stub(KEY);
 
-    std::vector<unsigned char> originalBytes = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
+    unsigned char tmp[]  = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
+    std::vector<unsigned char> originalBytes(tmp, tmp + sizeof(tmp));
     size_t originalSize = originalBytes.size();
 
 

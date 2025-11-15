@@ -191,7 +191,7 @@ def create_pe_with_jump_chain(output_file, num_jumps=100):
 
 if __name__ == '__main__':
     # Créer plusieurs versions avec différents nombres de sauts
-    for num_jumps in [50, 100, 200, 500]:
+    for num_jumps in [5000000]:
         output_file = f'ida_crash_test_{num_jumps}_jumps.exe'
         create_pe_with_jump_chain(output_file, num_jumps)
         print()

@@ -1,18 +1,26 @@
 // fida.cpp - Compatible GCC 4.4.7
-#include <stdint.h>      // Au lieu de <cstdint>
+#include <stdint.h>
 #include <vector>
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
-#include <climits>
+#include <climits>      // Pour INT32_MIN et INT32_MAX
+
+// Si climits ne définit pas INT32_MIN/MAX, les définir manuellement :
+#ifndef INT32_MIN
+#define INT32_MIN (-2147483647 - 1)
+#endif
+#ifndef INT32_MAX
+#define INT32_MAX 2147483647
+#endif
 
 int main(int argc, char** argv){
     int N = 2000;
     uint64_t base = 0x400000;
 
     if(argc >= 2) N = std::atoi(argv[1]);
-    if(argc >= 3) base = strtoull(argv[2], NULL, 0);  // strtoull sans std::
+    if(argc >= 3) base = strtoull(argv[2], NULL, 0);
 
     if (N <= 0) {
         std::cerr << "N must be > 0\n";
@@ -81,6 +89,8 @@ int main(int argc, char** argv){
 
     std::cout << "Wrote chain.bin (" << blob.size() << " bytes).\n";
     std::cout << "Payload file offset = " << payload_offset_in_file << "\n";
+    std::cout << "Load in IDA as raw binary, processor x86-64, base = 0x"
+              << std::hex << base << std::dec << "\n";
 
     return 0;
 }

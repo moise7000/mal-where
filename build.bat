@@ -145,7 +145,7 @@ exit /b %errorlevel%
 
 :compile_HASH_FUNCTION
 echo Compiling %HASH_FUNCTION%...
-%CXX% -o %HASH_FUNCTION% obfuscation_methods/hash_function.cpp tests/TestingTools.cpp tests/test_hash_function.cpp %CXXFLAGS%
+%CXX% -o %HASH_FUNCTION% obfuscation_methods/hash_function.cpp  tests/test_hash_function.cpp %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_PROCESSOR_ARCHITECTURE

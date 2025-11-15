@@ -2,7 +2,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include "hash_function.h"
+#include "../obfuscation_methods/hash_function.h"
 
 
 /**

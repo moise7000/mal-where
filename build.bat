@@ -210,7 +210,7 @@ exit /b %errorlevel%
 
 :compile_SHA
 echo Compiling %SHA%...
-%CXX% -o %SHA% obfuscation_methods/hash_function.cpp  tests/test_hash_function.cpp  %CXXFLAGS%
+%CXX% -o %SHA% crypto/hash_function.cpp  tests/test_hash_function.cpp  %CXXFLAGS%
 exit /b %errorlevel%
 
 

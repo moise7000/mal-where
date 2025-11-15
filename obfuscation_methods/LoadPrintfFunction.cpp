@@ -7,17 +7,7 @@
 #include <vector>
 
 
-const char* vectorToConstChar(const std::vector<unsigned char> &vec,
-                              std::string &buffer)
-{
-    if (vec.empty()) {
-        buffer.clear();
-        return buffer.c_str();
-    }
 
-    buffer.assign(reinterpret_cast<const char*>(&vec[0]), vec.size());
-    return buffer.c_str();
-}
 
 
 // Fonction qui encapsule le chargement dynamique de printf
@@ -33,17 +23,17 @@ type_printf LoadPrintfFunction() {
 
     const std::string key = systemEnvironment::getProcessorArchitecture();
     const Cipher cipher(key);
-    unsigned char bytes[] = {0x0e, 0x6c, 0xe5, 0xd2, 0xe7, 0x5c};
+    unsigned char bytes[] = {0xb0, 0xc1, 0xc9, 0xa5, 0xca, 0xc9};
     std::vector<unsigned char> encryptedBytes(bytes, bytes + 6);
     std::vector<unsigned char> decryptedBytes = cipher.decryptBytes(encryptedBytes);
 
-    std::string temp;
-    const char* cstr = vectorToConstChar(decryptedBytes, temp); //cstr = printf
+
+    const std::string functionName(decryptedBytes.begin(), decryptedBytes.end());
 
 
 
     // Obtenir l'adresse de la fonction printf
-    type_printf f = (type_printf)GetProcAddress(msvcrt, cstr);
+    type_printf f = (type_printf)GetProcAddress(msvcrt, functionName.c_str());
 
     if (f == NULL) {
         fprintf(stderr, "Erreur lors de la recuperation de printf\n");

@@ -175,8 +175,8 @@ exit /b %errorlevel%
 
 :compile_PACKING
 echo Compiling %PACKING%...
-%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_bytes/packing_mechanism.cpp  %CXXFLAGS%
-%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_bytes/packing_mechanism.cpp %RESOURCES_OBJ% %CXXFLAGS%
+%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_bytes_packing_mechanism.cpp  %CXXFLAGS%
+%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_bytes_packing_mechanism.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPRESSOR

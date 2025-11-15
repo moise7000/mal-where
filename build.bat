@@ -162,8 +162,8 @@ goto end
 :: Compilation functions
 :compile_CIPHER
 echo Compiling %CIPHER%...
-%CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp  %CXXFLAGS%
-%CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
+%CXX% -o %CIPHER% packer/Cipher.cpp  env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_cipher.cpp  %CXXFLAGS%
+%CXX% -o %CIPHER% packer/Cipher.cpp env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPUTER

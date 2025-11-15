@@ -1,5 +1,5 @@
-
-#include <cstdint>
+// fida.cpp - Compatible GCC 4.4.7
+#include <stdint.h>      // Au lieu de <cstdint>
 #include <vector>
 #include <fstream>
 #include <iostream>
@@ -12,7 +12,7 @@ int main(int argc, char** argv){
     uint64_t base = 0x400000;
 
     if(argc >= 2) N = std::atoi(argv[1]);
-    if(argc >= 3) base = std::strtoull(argv[2], NULL, 0); // NULL au lieu de nullptr
+    if(argc >= 3) base = strtoull(argv[2], NULL, 0);  // strtoull sans std::
 
     if (N <= 0) {
         std::cerr << "N must be > 0\n";
@@ -29,18 +29,20 @@ int main(int argc, char** argv){
 
     std::vector<uint8_t> payload;
     const int NOP_COUNT = 16;
-    for(int i=0;i<NOP_COUNT;i++) payload.push_back(0x90);
-    payload.push_back(0x48); payload.push_back(0x31); payload.push_back(0xC0);
+    for(int i=0; i<NOP_COUNT; i++) payload.push_back(0x90);
+    payload.push_back(0x48);
+    payload.push_back(0x31);
+    payload.push_back(0xC0);
     payload.push_back(0xC3);
 
     size_t payload_offset_in_file = blob.size();
     size_t align = 16;
     size_t pad = (align - (payload_offset_in_file % align)) % align;
-    for(size_t i=0;i<pad;i++) blob.push_back(0x90);
+    for(size_t i=0; i<pad; i++) blob.push_back(0x90);
     payload_offset_in_file = blob.size();
     blob.insert(blob.end(), payload.begin(), payload.end());
 
-    for(int j=0;j<N;j++){
+    for(int j=0; j<N; j++){
         uint64_t file_off = (uint64_t)j * JMP_SIZE;
         uint64_t va_jmp = base + file_off;
         uint64_t addr_next = va_jmp + JMP_SIZE;
@@ -56,8 +58,6 @@ int main(int argc, char** argv){
 
         if(rel < INT32_MIN || rel > INT32_MAX){
             std::cerr << "ERROR: rel32 out of range at index " << j << "\n";
-            std::cerr << "target_va=0x" << std::hex << target_va
-                      << " addr_next=0x" << addr_next << std::dec << "\n";
             return 2;
         }
 
@@ -76,14 +76,11 @@ int main(int argc, char** argv){
         std::cerr << "Cannot open chain.bin for writing\n";
         return 3;
     }
-    ofs.write((const char*)blob.data(), blob.size());
+    ofs.write((const char*)&blob[0], blob.size());
     ofs.close();
 
-    std::cout << "Wrote chain.bin (" << blob.size() << " bytes). "
-              << "Payload file offset = " << payload_offset_in_file << "\n";
-    std::cout << "Load in IDA as raw binary, processor x86-64, base = 0x"
-              << std::hex << base << std::dec << ", entry = 0x"
-              << std::hex << base << std::dec << "\n";
+    std::cout << "Wrote chain.bin (" << blob.size() << " bytes).\n";
+    std::cout << "Payload file offset = " << payload_offset_in_file << "\n";
 
     return 0;
 }

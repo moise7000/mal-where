@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include "../obfuscation_methods/hash_function.cpp"
+#include "../obfuscation_methods/hash_function.h"
 
 int main() {
     std::cout << "=== Tests de la fonction SHA-256 ===" << std::endl << std::endl;

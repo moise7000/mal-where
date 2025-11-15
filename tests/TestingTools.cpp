@@ -5,6 +5,8 @@
 #include "TestingTools.h"
 #include <iostream>
 #include <iomanip>
+#include <string>
+#include <sstream>
 #include <cassert>
 #include <windows.h>
 
@@ -94,11 +96,9 @@ namespace TestingTools {
     }
 
 
-#include <iostream>
-#include <string>
-#include <sstream>
 
-    std::string stringToBinary(const std::string &input) {
+
+    string stringToBinary(const std::string &input) {
         std::string result;
         for (size_t i = 0; i < input.size(); ++i) {
             unsigned char c = input[i];
@@ -109,7 +109,7 @@ namespace TestingTools {
         return result;
     }
 
-    std::string binaryToString(const std::string &input) {
+    string binaryToString(const std::string &input) {
         std::string result;
         if (input.size() % 8 != 0) {
             // La longueur doit être un multiple de 8

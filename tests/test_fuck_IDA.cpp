@@ -6,7 +6,7 @@
 #include <iostream>
 
 int main() {
-    size_t N = 2000; // Tu peux augmenter à 100k si nécessaire
+    size_t N = 100000; // Tu peux augmenter à 100k si nécessaire
     JmpChainFunc func = generateJumpChain(N);
 
     if(func == NULL) {

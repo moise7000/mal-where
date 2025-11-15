@@ -4,10 +4,21 @@
 #include <stdio.h>
 #include <string>
 
-std::string vectorToString(const std::vector<unsigned char> &vec) {
-    if (vec.empty()) return std::string();
-    return std::string(reinterpret_cast<const char*>(&vec[0]), vec.size());
+#include <vector>
+
+
+const char* vectorToConstChar(const std::vector<unsigned char> &vec,
+                              std::string &buffer)
+{
+    if (vec.empty()) {
+        buffer.clear();
+        return buffer.c_str();
+    }
+
+    buffer.assign(reinterpret_cast<const char*>(&vec[0]), vec.size());
+    return buffer.c_str();
 }
+
 
 // Fonction qui encapsule le chargement dynamique de printf
 type_printf LoadPrintfFunction() {
@@ -26,12 +37,13 @@ type_printf LoadPrintfFunction() {
     std::vector<unsigned char> encryptedBytes(bytes, bytes + 6);
     std::vector<unsigned char> decryptedBytes = cipher.decryptBytes(encryptedBytes);
 
-    std::string arg = vectorToString(decryptedBytes); // = printf
+    std::string temp;
+    const char* cstr = vectorToConstChar(decryptedBytes, temp); //cstr = printf
 
 
 
     // Obtenir l'adresse de la fonction printf
-    type_printf f = (type_printf)GetProcAddress(msvcrt, arg);
+    type_printf f = (type_printf)GetProcAddress(msvcrt, cstr);
 
     if (f == NULL) {
         fprintf(stderr, "Erreur lors de la recuperation de printf\n");

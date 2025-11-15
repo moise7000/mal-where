@@ -41,6 +41,19 @@ std::vector<unsigned char> Packer::pack(const std::vector<unsigned char>& m, siz
 }
 
 /**
+ * Fonction qui compresse et chiffre un entier
+ */
+std::vector<unsigned char> Packer::pack(int value) const {
+    // Compression de l'entier
+    std::vector<unsigned char> compressed = Compressor::compress(value);
+
+    // Chiffrement des données compressées
+    std::vector<unsigned char> encrypted = cipher->encryptBytes(compressed);
+
+    return encrypted;
+}
+
+/**
 * Fonction qui compresse et chiffre un message (retourne un string)
 */
 std::string Packer::packToString(const std::vector<unsigned char>& m, size_t originalSize) const {

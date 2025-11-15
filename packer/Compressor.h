@@ -54,6 +54,36 @@ namespace Compressor {
      * @return Vecteur contenant les données décompressées
      */
     std::vector<unsigned char> decompress(const std::vector<unsigned char>& data, size_t originalSize);
+
+
+
+
+
+    /**
+     * Compresse un entier
+     * @param value Entier à compresser
+     * @param level Niveau de compression (0-9, ou Z_DEFAULT_COMPRESSION)
+     * @return Vecteur contenant l'entier compressé
+     */
+    std::vector<unsigned char> compress(int value, int level);
+
+    /**
+     * Compresse un entier avec le niveau de compression par défaut
+     * @param value Entier à compresser
+     * @return Vecteur contenant l'entier compressé
+     */
+    std::vector<unsigned char> compress(int value);
+
+    /**
+     * Décompresse un entier
+     * @param data Vecteur des données compressées
+     * @return L'entier décompressé
+     */
+    int decompressInt(const std::vector<unsigned char>& data);
+
+
+
+
 }
 
 #endif // COMPRESSOR_H

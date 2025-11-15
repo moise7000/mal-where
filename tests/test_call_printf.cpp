@@ -3,7 +3,11 @@
 //
 
 
+#include <string>
+
+#include "../env/SystemEnvironment.h"
 #include "../obfuscation_methods/LoadPrintfFunction.h"
+#include "../packer/Cipher.h"
 
 int main(int argc, char *argv[]) {
     // Charger la fonction printf dynamiquement
@@ -14,6 +18,10 @@ int main(int argc, char *argv[]) {
     if (f == NULL) {
         return 1;
     }
+
+
+
+
 
     // Utiliser la fonction printf
     f("Hello world\n");

@@ -219,7 +219,7 @@ echo Compiling %SHA%...
 exit /b %errorlevel%
 
 
-:compile_TMP_PATH
+:compile_CALL
 echo Compiling %TMP_PATH%...
 %CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp tests/TestingTools.cpp tests/test_call_printf.cpp  %CXXFLAGS%
 %CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp tests/TestingTools.cpp tests/test_call_printf.cpp %RESOURCES_OBJ% %CXXFLAGS%

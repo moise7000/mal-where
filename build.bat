@@ -3,10 +3,12 @@ setlocal
 
 :: Compiler and flags
 set CXX=g++
+
 set WINDRES=windres
 set CXXFLAGS=-lz
 set RESOURCES_RC=resources.rc
 set RESOURCES_OBJ=resources.o
+
 
 :: Executable names
 set CIPHER=cipher.exe
@@ -18,9 +20,11 @@ SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
 set PROCESSOR_ARCHITECTURE=processor_architecture.exe
 set TMP_PATH=tmp_path.exe
+set SHA=sha.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
+
 if "%1"=="resources" goto compile_resources
 if "%1"=="tests" (
     if "%2"=="" (
@@ -60,6 +64,10 @@ if errorlevel 1 (
 echo Resources compiled successfully: %RESOURCES_OBJ%
 goto end
 
+
+
+
+
 :test_single
 set TEST_NAME=%2
 if "%TEST_NAME%"=="" (
@@ -67,6 +75,7 @@ if "%TEST_NAME%"=="" (
     echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR
     goto error
 )
+
 
 :: Compile resources first
 call :compile_resources
@@ -84,6 +93,7 @@ echo ********************************************
 echo.
 
 :: Compile resources first
+
 call :compile_resources
 if errorlevel 1 goto error
 
@@ -117,6 +127,8 @@ if errorlevel 1 goto error
 call :compile_TMP_PATH
 if errorlevel 1 goto error
 
+call :compile_SHA
+if errorlevel 1 goto error
 
 echo.
 echo ********************************************
@@ -133,6 +145,7 @@ call :run_COMPOSE
 call :run_FAKE_REC
 call :run_PROCESSOR_ARCHITECTURE
 call :run_TMP_PATH
+call :run_SHA
 
 
 echo.
@@ -144,36 +157,43 @@ goto end
 :: Compilation functions
 :compile_CIPHER
 echo Compiling %CIPHER%...
+%CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp  %CXXFLAGS%
 %CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPUTER
 echo Compiling %COMPUTER%...
+%CXX% -o %COMPUTER% packer/ComputerName.cpp tests/TestingTools.cpp tests/test_computer_name.cpp  %CXXFLAGS%
 %CXX% -o %COMPUTER% packer/ComputerName.cpp tests/TestingTools.cpp tests/test_computer_name.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_STUB
 echo Compiling %STUB%...
+%CXX% -o %STUB% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_stub.cpp  %CXXFLAGS%
 %CXX% -o %STUB% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_stub.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_PACKING
 echo Compiling %PACKING%...
+%CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_packing_mechanism.cpp  %CXXFLAGS%
 %CXX% -o %PACKING% packer/Cipher.cpp packer/Stub.cpp packer/Compressor.cpp packer/Packer.cpp tests/TestingTools.cpp tests/test_packing_mechanism.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPRESSOR
 echo Compiling %COMPRESSOR%...
+%CXX% -o %COMPRESSOR% packer/Compressor.cpp tests/TestingTools.cpp tests/test_compressor.cpp  %CXXFLAGS%
 %CXX% -o %COMPRESSOR% packer/Compressor.cpp tests/TestingTools.cpp tests/test_compressor.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPOSE
 echo Compiling %COMPOSE%...
+%CXX% -o %COMPOSE% obfuscation_methods/compose.cpp tests/TestingTools.cpp tests/test_compose.cpp  %CXXFLAGS%
 %CXX% -o %COMPOSE% obfuscation_methods/compose.cpp tests/TestingTools.cpp tests/test_compose.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_FAKE_REC
 echo Compiling %FAKE_REC%...
+%CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp  %CXXFLAGS%
 %CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
@@ -184,8 +204,15 @@ exit /b %errorlevel%
 
 :compile_TMP_PATH
 echo Compiling %TMP_PATH%...
+%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp  %CXXFLAGS%
 %CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
+
+:compile_SHA
+echo Compiling %SHA%...
+%CXX% -o %SHA% obfuscation_methods/hash_function.cpp  tests/test_hash_function.cpp  %CXXFLAGS%
+exit /b %errorlevel%
+
 
 :: Run functions
 :run_CIPHER
@@ -242,6 +269,12 @@ echo *** Test temp path ***
 echo.
 exit /b 0
 
+:run_SHA
+echo *** Test temp path ***
+%SHA%
+echo.
+exit /b 0
+
 :clean
 echo Cleaning executables...
 if exist %CIPHER% del %CIPHER%
@@ -253,6 +286,8 @@ if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
 if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 if exist %TMP_PATH% del %TMP_PATH%
+if exist %SHA% del %SHA%
+
 if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.
 goto end

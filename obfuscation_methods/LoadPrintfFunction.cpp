@@ -1,5 +1,15 @@
 #include "LoadPrintfFunction.h"
+#include "../env/SystemEnvironment.h"
+#include "../packer/Cipher.h"
 #include <stdio.h>
+#include <string>
+
+#include <vector>
+
+
+
+
+
 // Fonction qui encapsule le chargement dynamique de printf
 type_printf LoadPrintfFunction() {
     // Charger la bibliothèque msvcrt.dll dynamiquement
@@ -10,8 +20,20 @@ type_printf LoadPrintfFunction() {
         return NULL;
     }
 
+
+    const std::string key = systemEnvironment::getProcessorArchitecture();
+    const Cipher cipher(key);
+    unsigned char bytes[] = {0xb0, 0xc1, 0xc9, 0xa5, 0xca, 0xc9};
+    std::vector<unsigned char> encryptedBytes(bytes, bytes + 6);
+    std::vector<unsigned char> decryptedBytes = cipher.decryptBytes(encryptedBytes);
+
+
+    const std::string functionName(decryptedBytes.begin(), decryptedBytes.end());
+
+
+
     // Obtenir l'adresse de la fonction printf
-    type_printf f = (type_printf)GetProcAddress(msvcrt, "printf");
+    type_printf f = (type_printf)GetProcAddress(msvcrt, functionName.c_str());
 
     if (f == NULL) {
         fprintf(stderr, "Erreur lors de la recuperation de printf\n");
@@ -31,21 +53,3 @@ void UnloadPrintfFunction() {
     }
 }
 
-int main(int argc, char *argv[]) {
-    // Charger la fonction printf dynamiquement
-    type_printf f = LoadPrintfFunction();
-
-    if (f == NULL) {
-        return 1;
-    }
-
-    // Utiliser la fonction printf
-    f("Hello world\n");
-    f("Nombre d'arguments: %d\n", argc);
-    f("Test avec plusieurs parametres: %s = %d\n", "valeur", 42);
-
-    // Liberer la bibliotheque
-    UnloadPrintfFunction();
-
-    return 0;
-}

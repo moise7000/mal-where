@@ -7,6 +7,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include "../env/SystemEnvironment.h"
+
 
 int main() {
     try {
@@ -16,7 +18,7 @@ int main() {
 
 
         // Création du cipher avec une clé
-        const std::string key = "MaSuperCleSecrete123";
+        const std::string key = systemEnvironment::getProcessorArchitecture();
         const Cipher cipher(key);
 
         std::vector<unsigned char> dataVec(code, code + originalSize);
@@ -51,11 +53,12 @@ int main() {
 
         unsigned char bytes[] = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
         std::vector<unsigned char> originalBytes(bytes, bytes + 6);
-        std::vector<unsigned char> encryptedSingle = cipher.encryptBytes(originalBytes);
-        std::vector<unsigned char> decryptedSingle = cipher.decryptBytes(encryptedSingle);
+        std::vector<unsigned char> encryptedBytes = cipher.encryptBytes(originalBytes);
+        TestingTools::printHex(encryptedBytes, "[DEBUG] encryptes bytes");
+        std::vector<unsigned char> decryptedSingle = cipher.decryptBytes(encryptedBytes);
 
 
-        if (originalBytes == decryptedSingle && encryptedSingle[0] != originalBytes[0]) {
+        if (originalBytes == decryptedSingle && encryptedBytes[0] != originalBytes[0]) {
             TestingTools::printGreen("Test 3 passed: single byte encryption/decryption");
         } else {
             TestingTools::printRed("Test 3 failed: single byte test");

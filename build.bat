@@ -162,8 +162,8 @@ goto end
 :: Compilation functions
 :compile_CIPHER
 echo Compiling %CIPHER%...
-%CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp  %CXXFLAGS%
-%CXX% -o %CIPHER% packer/Cipher.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
+%CXX% -o %CIPHER% packer/Cipher.cpp  env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_cipher.cpp  %CXXFLAGS%
+%CXX% -o %CIPHER% packer/Cipher.cpp env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_COMPUTER
@@ -221,8 +221,8 @@ exit /b %errorlevel%
 
 :compile_CALL
 echo Compiling %TMP_PATH%...
-%CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp tests/TestingTools.cpp tests/test_call_printf.cpp  %CXXFLAGS%
-%CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp tests/TestingTools.cpp tests/test_call_printf.cpp %RESOURCES_OBJ% %CXXFLAGS%
+%CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp env/SystemEnvironment.cpp packer/Cipher.cpp tests/TestingTools.cpp tests/test_call_printf.cpp  %CXXFLAGS%
+%CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp env/SystemEnvironment.cpp packer/Cipher.cpp tests/TestingTools.cpp tests/test_call_printf.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :: Run functions

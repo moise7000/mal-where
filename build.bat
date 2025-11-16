@@ -22,6 +22,7 @@ set PROCESSOR_ARCHITECTURE=processor_architecture.exe
 set TMP_PATH=tmp_path.exe
 set SHA=sha.exe
 set CALL=call_printf.exe
+set DEVIL=devil.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -38,7 +39,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
-echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL
+echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL
 echo.
 echo Commands:
 echo   build.bat                - Compile and run all tests
@@ -134,6 +135,9 @@ if errorlevel 1 goto error
 call :compile_CALL
 if errorlevel 1 goto error
 
+call :compile_DEVIL
+if errorlevel 1 goto error
+
 echo.
 echo ********************************************
 echo *          Running tests...                *
@@ -151,6 +155,7 @@ call :run_PROCESSOR_ARCHITECTURE
 call :run_TMP_PATH
 call :run_SHA
 call :run_CALL
+call :run_DEVIL
 
 
 echo.
@@ -225,6 +230,12 @@ echo Compiling %TMP_PATH%...
 %CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp env/SystemEnvironment.cpp packer/Cipher.cpp tests/TestingTools.cpp tests/test_call_printf.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
+:compile_DEVIL
+echo Compiling %TMP_PATH%...
+%CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm %CXXFLAGS%
+%CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm  %RESOURCES_OBJ% %CXXFLAGS%
+exit /b %errorlevel%
+
 :: Run functions
 :run_CIPHER
 echo *** Test Cipher ***
@@ -291,6 +302,13 @@ echo *** Test call printf ***
 %CALL%
 echo.
 exit /b 0
+
+:run_DEVIL
+echo *** Test devil ***
+%DEVIL%
+echo.
+exit /b 0
+
 
 :clean
 echo Cleaning executables...

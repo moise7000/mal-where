@@ -23,6 +23,7 @@ set TMP_PATH=tmp_path.exe
 set SHA=sha.exe
 set CALL=call_printf.exe
 set DEVIL=devil.exe
+set ANTI_DEBUG=anti_debug.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -39,7 +40,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
-echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL
+echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL, ANTI_DEBUG
 echo.
 echo Commands:
 echo   build.bat                - Compile and run all tests
@@ -138,6 +139,9 @@ if errorlevel 1 goto error
 call :compile_DEVIL
 if errorlevel 1 goto error
 
+call :compile_ANTI_DEBUG
+if errorlevel 1 goto error
+
 echo.
 echo ********************************************
 echo *          Running tests...                *
@@ -156,6 +160,7 @@ call :run_TMP_PATH
 call :run_SHA
 call :run_CALL
 call :run_DEVIL
+call :run_ANTI_DEBUG
 
 
 echo.
@@ -236,6 +241,11 @@ echo Compiling %TMP_PATH%...
 %CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm  %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
+:compile_ANTI_DEBUG
+echo Compiling %ANTI_DEBUG%...
+%CXX% -o %ANTI_DEBUG% tests/test_anti_debug.cpp -lpsapi -std=c++03 %CXXFLAGS%
+exit /b %errorlevel%
+
 :: Run functions
 :run_CIPHER
 echo *** Test Cipher ***
@@ -309,6 +319,12 @@ echo *** Test devil ***
 echo.
 exit /b 0
 
+:run_ANTI_DEBUG
+echo *** Test Anti-Debug ***
+%ANTI_DEBUG%
+echo.
+exit /b 0
+
 
 :clean
 echo Cleaning executables...
@@ -323,6 +339,7 @@ if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 if exist %TMP_PATH% del %TMP_PATH%
 if exist %SHA% del %SHA%
 if exist %CALL% del %CALL%
+if exist %ANTI_DEBUG% del %ANTI_DEBUG%
 
 if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.

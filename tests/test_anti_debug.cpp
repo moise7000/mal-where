@@ -1,126 +1,158 @@
+// Test anti-debug utilities for Windows
+// Compatible with Windows 7+ (MSVC 2010+ / MinGW)
+
 #include <iostream>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
-#include <cerrno>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/ptrace.h>
-#include <sys/wait.h>
-#include <dlfcn.h>
 
-// Include the implementation directly for simplicity in this project layout
+#ifdef _WIN32
+#include <windows.h>
+#else
+#error "This test requires Windows"
+#endif
+
+// Include the anti_debug implementation
 #include "../obfuscation_methods/anti_debug/anti_debug.h"
-// Inclure l'implémentation pour ce projet mono-fichier (pas de build system dédié)
 #include "../obfuscation_methods/anti_debug/anti_debug.cpp"
 
 static void print_bool(const char* label, bool v) {
     std::cout << label << ": " << (v ? "YES" : "NO") << std::endl;
 }
 
+static void print_separator(const char* title) {
+    std::cout << "\n========== " << title << " ==========" << std::endl;
+}
+
 int main() {
-    std::cout << "=== Anti-Debug checks ===" << std::endl;
+    std::cout << "==================================================" << std::endl;
+    std::cout << "     Anti-Debug Detection Suite - Windows 7+     " << std::endl;
+    std::cout << "==================================================" << std::endl;
 
+    // ========== Debugger Detection ==========
+    print_separator("Debugger Detection");
+    
     bool dbg = anti_debug::is_debugger_present();
-    print_bool("Debugger present (proc)", dbg);
+    print_bool("IsDebuggerPresent() / PEB", dbg);
+    
+    bool dbg_nt = anti_debug::is_debugger_present_ptrace();
+    print_bool("NtGlobalFlag (heap debug)", dbg_nt);
+    
+    if (dbg || dbg_nt) {
+        std::cout << "\n*** DEBUGGER DETECTED ***" << std::endl;
+        std::cout << "Running under: OllyDbg, x64dbg, WinDbg, or Visual Studio" << std::endl;
+    } else {
+        std::cout << "\nNo debugger detected (normal execution)" << std::endl;
+    }
 
-    bool dbg2 = anti_debug::is_debugger_present_ptrace();
-    print_bool("Debugger present (ptrace)", dbg2);
+    // ========== Parent Process Check ==========
+    print_separator("Parent Process Check");
+    
+    bool parent_sus = anti_debug::parent_process_suspicious();
+    print_bool("Parent process suspicious", parent_sus);
+    
+    if (parent_sus) {
+        std::cout << "Launched from a debugger!" << std::endl;
+    }
 
+    // ========== Environment Variables ==========
+    print_separator("Environment Variables");
+    
+    bool env_sus = anti_debug::env_suspicious();
+    print_bool("Env suspicious (_NT_*)", env_sus);
+    
+    // Test with setting a variable
+    _putenv("_NT_SYMBOL_PATH=C:\\symbols");
+    bool env_sus2 = anti_debug::env_suspicious();
+    print_bool("After _NT_SYMBOL_PATH set", env_sus2);
+    
+    _putenv("_NT_SYMBOL_PATH=");
+    bool env_sus3 = anti_debug::env_suspicious();
+    print_bool("After _NT_SYMBOL_PATH unset", env_sus3);
+
+    // ========== Loaded Modules ==========
+    print_separator("Loaded Modules");
+    
+    bool loaded_sus = anti_debug::loaded_objects_suspicious();
+    print_bool("Suspicious DLLs loaded", loaded_sus);
+    
+    if (loaded_sus) {
+        std::cout << "Detected: Frida, x64dbg plugins, MinHook, or Detours" << std::endl;
+    }
+
+    // ========== Preload Check ==========
+    print_separator("Preload Check");
+    
     bool preload = anti_debug::has_preload();
-    print_bool("LD_PRELOAD set", preload);
-    // Toggle LD_PRELOAD
-    setenv("LD_PRELOAD", "libX.so", 1);
-    bool preload_on = anti_debug::has_preload();
-    print_bool("LD_PRELOAD set (after setenv)", preload_on);
-    unsetenv("LD_PRELOAD");
-    bool preload_off = anti_debug::has_preload();
-    print_bool("LD_PRELOAD set (after unsetenv)", preload_off);
+    print_bool("Has preload (Windows)", preload);
+    std::cout << "(Note: Always false on Windows, simplified)" << std::endl;
 
-    bool envsus = anti_debug::env_suspicious();
-    print_bool("Env suspicious (LD_*)", envsus);
-    // Toggle an LD_* var
-    setenv("LD_DEBUG", "1", 1);
-    bool envsus2 = anti_debug::env_suspicious();
-    print_bool("Env suspicious (after LD_DEBUG=1)", envsus2);
-    unsetenv("LD_DEBUG");
-    bool envsus3 = anti_debug::env_suspicious();
-    print_bool("Env suspicious (after LD_DEBUG unset)", envsus3);
-
-    bool parentsus = anti_debug::parent_process_suspicious();
-    print_bool("Parent suspicious", parentsus);
-
-    bool loadsus = anti_debug::loaded_objects_suspicious();
-    print_bool("Loaded objects suspicious", loadsus);
-
+    // ========== Binary Checksums ==========
+    print_separator("Binary Integrity");
+    
     unsigned long size1 = 0, size2 = 0;
-    unsigned long c1 = anti_debug::checksum_self(&size1);
-    unsigned long c2 = anti_debug::checksum_self(&size2);
-
-    std::cout << "Self checksum #1: 0x" << std::hex << c1 << std::dec << " (size=" << size1 << ")" << std::endl;
-    std::cout << "Self checksum #2: 0x" << std::hex << c2 << std::dec << " (size=" << size2 << ")" << std::endl;
-
-    unsigned long tsize = 0;
-    unsigned long tchk = anti_debug::text_segments_checksum(&tsize);
-    std::cout << "Text segments checksum: 0x" << std::hex << tchk << std::dec << " (total=" << tsize << ")" << std::endl;
-    // dlopen a common library to see if checksum/size changes (may or may not change depending on already loaded)
-    void* h = dlopen("libm.so.6", RTLD_NOW);
-    unsigned long tsize2 = 0;
-    unsigned long tchk2 = anti_debug::text_segments_checksum(&tsize2);
-    std::cout << "After dlopen(libm): text checksum: 0x" << std::hex << tchk2 << std::dec << " (total=" << tsize2 << ")" << std::endl;
-    if (h) dlclose(h);
-
-    // Optional: simulate a debugger by attaching to a child process
-    const char* enable_attach = std::getenv("ENABLE_PTRACE_ATTACH");
-    if (enable_attach && *enable_attach == '1') {
-        pid_t pid = fork();
-        if (pid == 0) {
-            // Child: wait to be attached and detect
-            for (int i = 0; i < 50; ++i) {
-                if (anti_debug::is_debugger_present() || anti_debug::is_debugger_present_ptrace()) {
-                    std::cout << "Child: debugger detected" << std::endl;
-                    _exit(0);
-                }
-                usleep(100000); // 100ms
-            }
-            std::cout << "Child: debugger NOT detected" << std::endl;
-            _exit(2);
-        } else if (pid > 0) {
-            // Parent: try to attach
-            sleep(1);
-            if (ptrace(PTRACE_ATTACH, pid, 0, 0) == -1) {
-                std::perror("PTRACE_ATTACH");
-                kill(pid, SIGKILL);
-                int st; waitpid(pid, &st, 0);
-                std::cout << "ptrace attach not permitted on this system (skipping attach test)" << std::endl;
-            } else {
-                int st; waitpid(pid, &st, 0); // stopped
-                ptrace(PTRACE_CONT, pid, 0, 0); // let it run under trace
-                sleep(1); // give child time to detect
-                ptrace(PTRACE_DETACH, pid, 0, 0); // detach to allow clean exit
-                waitpid(pid, &st, 0);
-                if (WIFEXITED(st)) {
-                    int code = WEXITSTATUS(st);
-                    std::cout << "Child exited with code " << code << (code==0?" (OK)":" (FAIL)") << std::endl;
-                } else if (WIFSIGNALED(st)) {
-                    std::cout << "Child killed by signal " << WTERMSIG(st) << std::endl;
-                } else {
-                    std::cout << "Child did not exit cleanly" << std::endl;
-                }
-            }
-        } else {
-            std::perror("fork");
-        }
+    unsigned long chk1 = anti_debug::checksum_self(&size1);
+    unsigned long chk2 = anti_debug::checksum_self(&size2);
+    
+    std::cout << "Executable checksum #1: 0x" << std::hex << chk1 
+              << std::dec << " (" << size1 << " bytes)" << std::endl;
+    std::cout << "Executable checksum #2: 0x" << std::hex << chk2 
+              << std::dec << " (" << size2 << " bytes)" << std::endl;
+    
+    if (chk1 == chk2 && size1 == size2) {
+        std::cout << "[OK] Checksum stable" << std::endl;
     } else {
-        std::cout << "(ptrace attach test skipped, set ENABLE_PTRACE_ATTACH=1 to run it)" << std::endl;
+        std::cout << "[FAIL] Checksum mismatch!" << std::endl;
     }
 
-    if (c1 == c2 && size1 == size2) {
-        std::cout << "Checksum stable: OK" << std::endl;
+    // ========== Text Segments Checksum ==========
+    print_separator("Code Sections Integrity");
+    
+    unsigned long text_size = 0;
+    unsigned long text_chk = anti_debug::text_segments_checksum(&text_size);
+    std::cout << "Text sections checksum: 0x" << std::hex << text_chk 
+              << std::dec << " (" << text_size << " bytes)" << std::endl;
+    
+    // Load a DLL and check if text checksum changes
+    std::cout << "\nLoading kernel32.dll (should not affect our .text)..." << std::endl;
+    HMODULE hKernel = LoadLibraryA("kernel32.dll");
+    
+    unsigned long text_size2 = 0;
+    unsigned long text_chk2 = anti_debug::text_segments_checksum(&text_size2);
+    std::cout << "After LoadLibrary: 0x" << std::hex << text_chk2 
+              << std::dec << " (" << text_size2 << " bytes)" << std::endl;
+    
+    if (text_chk == text_chk2) {
+        std::cout << "[OK] Text sections unchanged" << std::endl;
     } else {
-        std::cout << "Checksum mismatch: FAIL" << std::endl;
+        std::cout << "[WARNING] Text sections changed (possible breakpoints or patches)" << std::endl;
+    }
+    
+    if (hKernel) FreeLibrary(hKernel);
+
+    // ========== Summary ==========
+    print_separator("Summary");
+    
+    int total_detections = 0;
+    if (dbg) total_detections++;
+    if (dbg_nt) total_detections++;
+    if (parent_sus) total_detections++;
+    if (env_sus) total_detections++;
+    if (loaded_sus) total_detections++;
+    
+    std::cout << "Total detections: " << total_detections << "/5" << std::endl;
+    
+    if (total_detections > 0) {
+        std::cout << "\n*** WARNING: Debugging/instrumentation detected! ***" << std::endl;
+        std::cout << "This program is being analyzed." << std::endl;
+    } else {
+        std::cout << "\n[OK] No suspicious activity detected" << std::endl;
+        std::cout << "Program is running in a clean environment." << std::endl;
     }
 
-    std::cout << "=== End ===" << std::endl;
+    std::cout << "\n==================================================" << std::endl;
+    std::cout << "                   Test Complete                  " << std::endl;
+    std::cout << "==================================================" << std::endl;
+
     return 0;
 }

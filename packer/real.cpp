@@ -12,14 +12,170 @@
 #pragma pack(push, 1)
 struct PackedSection {
     DWORD magic;             // Signature 0x4B435041 ("PACK")
-    BOOL lockFlag;
     DWORD unpacked_size;
     DWORD packed_size;
-    uint32_t lockHash;
     uint32_t key[4];         // Clé de déchiffrement
     // Le payload suit immédiatement après
 };
 #pragma pack(pop)
+
+// ==================== CODE DU STUB UNPACKER (sera compilé séparément) ====================
+// Ce code sera le stub d'extraction injecté dans l'exe packed
+
+const char* stubSourceCode = R"(
+#include <windows.h>
+#include <stdio.h>
+
+#pragma pack(push, 1)
+struct PackedSection {
+    DWORD magic;
+    DWORD unpacked_size;
+    DWORD packed_size;
+    DWORD key[4];
+};
+#pragma pack(pop)
+
+void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {
+    unsigned char* keyBytes = (unsigned char*)key;
+    for (DWORD i = 0; i < size; i++) {
+        data[i] ^= keyBytes[i % 16];
+    }
+}
+
+DWORD decompressRLE(unsigned char* input, DWORD inputSize, unsigned char* output, DWORD outputSize) {
+    DWORD writePos = 0;
+    DWORD readPos = 0;
+
+    while (readPos < inputSize && writePos < outputSize) {
+        unsigned char current = input[readPos];
+
+        if (current == 0xFF && readPos + 2 < inputSize) {
+            unsigned char count = input[readPos + 1];
+            if (count == 0) {
+                output[writePos++] = 0xFF;
+                readPos += 2;
+            } else {
+                unsigned char value = input[readPos + 2];
+                for (int i = 0; i < count && writePos < outputSize; i++) {
+                    output[writePos++] = value;
+                }
+                readPos += 3;
+            }
+        } else {
+            output[writePos++] = current;
+            readPos++;
+        }
+    }
+
+    return writePos;
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    // Obtenir le chemin de l'exécutable actuel
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(NULL, exePath, MAX_PATH);
+
+    // Ouvrir l'exécutable pour lire la section packed
+    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) return 1;
+
+    // Mapper le fichier en mémoire
+    HANDLE hMapping = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+    if (!hMapping) {
+        CloseHandle(hFile);
+        return 1;
+    }
+
+    unsigned char* fileData = (unsigned char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
+    if (!fileData) {
+        CloseHandle(hMapping);
+        CloseHandle(hFile);
+        return 1;
+    }
+
+    // Trouver la section .packed
+    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)fileData;
+    IMAGE_NT_HEADERS* ntHeaders = (IMAGE_NT_HEADERS*)(fileData + dosHeader->e_lfanew);
+    IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);
+
+    PackedSection* packedSec = NULL;
+    unsigned char* packedData = NULL;
+
+    for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {
+        if (memcmp(sections[i].Name, ".packed", 7) == 0) {
+            packedSec = (PackedSection*)(fileData + sections[i].PointerToRawData);
+            packedData = (unsigned char*)packedSec + sizeof(PackedSection);
+            break;
+        }
+    }
+
+    if (!packedSec || packedSec->magic != 0x4B435041) {
+        UnmapViewOfFile(fileData);
+        CloseHandle(hMapping);
+        CloseHandle(hFile);
+        return 1;
+    }
+
+    // Allouer buffers
+    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+    if (!decrypted || !decompressed) {
+        UnmapViewOfFile(fileData);
+        CloseHandle(hMapping);
+        CloseHandle(hFile);
+        return 1;
+    }
+
+    // Copier et déchiffrer
+    memcpy(decrypted, packedData, packedSec->packed_size);
+    decryptXOR(decrypted, packedSec->packed_size, packedSec->key);
+
+    // Décompresser
+    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);
+
+    // Créer fichier temporaire
+    char tempPath[MAX_PATH];
+    char tempFile[MAX_PATH];
+    GetTempPathA(MAX_PATH, tempPath);
+    GetTempFileNameA(tempPath, "tmp", 0, tempFile);
+
+    // Changer l'extension en .exe
+    char* ext = strrchr(tempFile, '.');
+    if (ext) strcpy(ext, ".exe");
+
+    // Écrire le fichier décompressé
+    HANDLE hTempFile = CreateFileA(tempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);
+    if (hTempFile != INVALID_HANDLE_VALUE) {
+        DWORD written;
+        WriteFile(hTempFile, decompressed, decompSize, &written, NULL);
+        CloseHandle(hTempFile);
+
+        // Nettoyer les ressources
+        VirtualFree(decrypted, 0, MEM_RELEASE);
+        VirtualFree(decompressed, 0, MEM_RELEASE);
+        UnmapViewOfFile(fileData);
+        CloseHandle(hMapping);
+        CloseHandle(hFile);
+
+        // Exécuter le fichier temporaire
+        STARTUPINFOA si = {0};
+        PROCESS_INFORMATION pi = {0};
+        si.cb = sizeof(si);
+
+        if (CreateProcessA(tempFile, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+
+        // Supprimer le fichier temporaire
+        DeleteFileA(tempFile);
+    }
+
+    return 0;
+}
+)";
 
 class SimplePacker {
 private:
@@ -31,7 +187,45 @@ private:
     uint32_t lockKey[4];
     uint32_t lockHash;
 
-    // ==================== COMPRESSION RLE SIMPLE ====================
+    // ==================== COMPILATION DU STUB ====================
+    bool compileStub(const std::string& stubExePath) {
+        // Créer un fichier source temporaire
+        char tempPath[MAX_PATH];
+        char stubSourcePath[MAX_PATH];
+        GetTempPathA(MAX_PATH, tempPath);
+        sprintf(stubSourcePath, "%s\\stub_source.c", tempPath);
+
+        // Écrire le code source
+        FILE* f = fopen(stubSourcePath, "w");
+        if (!f) {
+            fprintf(stderr, "[-] Could not create stub source file\n");
+            return false;
+        }
+        fprintf(f, "%s", stubSourceCode);
+        fclose(f);
+
+        // Compiler avec GCC
+        char compileCmd[1024];
+        sprintf(compileCmd, "gcc -O2 -s -mwindows -o \"%s\" \"%s\" 2>nul",
+                stubExePath.c_str(), stubSourcePath);
+
+        printf("[*] Compiling unpacker stub...\n");
+        int result = system(compileCmd);
+
+        // Nettoyer
+        DeleteFileA(stubSourcePath);
+
+        if (result != 0) {
+            fprintf(stderr, "[-] Failed to compile stub. Make sure GCC is installed.\n");
+            fprintf(stderr, "[-] You can install MinGW or use: winget install -e --id GnuWin32.Make\n");
+            return false;
+        }
+
+        printf("[+] Stub compiled successfully\n");
+        return true;
+    }
+
+    // ==================== COMPRESSION RLE ====================
     std::vector<BYTE> compressRLE(const std::vector<BYTE>& input) {
         std::vector<BYTE> compressed;
         compressed.reserve(input.size());
@@ -89,315 +283,103 @@ private:
         return hashDJB2(reinterpret_cast<const BYTE*>(str.c_str()), str.length());
     }
 
-    // ==================== ALIGNEMENT ====================
     static DWORD alignValue(DWORD value, DWORD alignment) {
         DWORD r = value % alignment;
         return r ? value + (alignment - r) : value;
     }
 
-    // ==================== CONVERSION INT TO STRING (GCC 4.4.7) ====================
     static std::string intToString(int value) {
         char buffer[32];
         sprintf(buffer, "%d", value);
         return std::string(buffer);
     }
 
-    // ==================== STUB UNPACKER AVEC DÉCOMPRESSION ====================
-    std::vector<BYTE> generateUnpackerStub(bool is64bit) {
-        std::vector<BYTE> stub;
-
-        if (is64bit) {
-            // Stub x64 avec décompression RLE et déchiffrement XOR
-            BYTE stubCode[] = {
-                // Prologue
-                0x55,                                           // push rbp
-                0x48, 0x89, 0xE5,                              // mov rbp, rsp
-                0x48, 0x83, 0xEC, 0x40,                        // sub rsp, 64
-
-                // Sauvegarder les registres
-                0x53,                                           // push rbx
-                0x56,                                           // push rsi
-                0x57,                                           // push rdi
-
-                // Trouver l'adresse de base
-                0x48, 0x8B, 0x05, 0x00, 0x00, 0x00, 0x00,     // mov rax, [rip + imagebase]
-                0x48, 0x89, 0x45, 0xF8,                        // mov [rbp-8], rax
-
-                // Trouver la section .packed
-                0x48, 0x8B, 0x5D, 0xF8,                        // mov rbx, [rbp-8]
-                0x48, 0x63, 0x43, 0x3C,                        // movsxd rax, dword [rbx+3Ch]
-                0x48, 0x01, 0xD8,                              // add rax, rbx
-                0x48, 0x89, 0x45, 0xF0,                        // mov [rbp-16], rax
-
-                // Allouer mémoire pour décompression
-                0x48, 0x8D, 0x0D, 0x00, 0x10, 0x00, 0x00,     // lea rcx, [.packed section]
-                0x8B, 0x51, 0x08,                              // mov edx, [rcx+8]
-                0x48, 0x89, 0x55, 0xE8,                        // mov [rbp-24], rdx
-
-                // VirtualAlloc
-                0x48, 0x31, 0xC9,                              // xor rcx, rcx
-                0x41, 0xB8, 0x00, 0x30, 0x00, 0x00,           // mov r8d, MEM_COMMIT | MEM_RESERVE
-                0x41, 0xB9, 0x40, 0x00, 0x00, 0x00,           // mov r9d, PAGE_EXECUTE_READWRITE
-                0xFF, 0x15, 0x00, 0x00, 0x00, 0x00,           // call [VirtualAlloc]
-                0x48, 0x89, 0x45, 0xE0,                        // mov [rbp-32], rax
-
-                // Déchiffrement XOR
-                0x48, 0x8D, 0x35, 0x00, 0x10, 0x00, 0x00,     // lea rsi, [.packed section payload]
-                0x48, 0x8B, 0x7D, 0xE0,                        // mov rdi, [rbp-32]
-                0x48, 0x8B, 0x4D, 0xE8,                        // mov rcx, [rbp-24]
-                0x48, 0x8D, 0x15, 0x00, 0x00, 0x00, 0x00,     // lea rdx, [key]
-
-                // Boucle de déchiffrement
-                0x48, 0x31, 0xDB,                              // xor rbx, rbx
-                // decrypt_loop:
-                0x8A, 0x04, 0x1E,                              // mov al, [rsi+rbx]
-                0x48, 0x89, 0xD8,                              // mov rax, rbx
-                0x48, 0x83, 0xE0, 0x0F,                        // and rax, 15
-                0x32, 0x04, 0x02,                              // xor al, [rdx+rax]
-                0x88, 0x04, 0x1F,                              // mov [rdi+rbx], al
-                0x48, 0xFF, 0xC3,                              // inc rbx
-                0x48, 0x39, 0xCB,                              // cmp rbx, rcx
-                0x72, 0xEB,                                    // jb decrypt_loop
-
-                // Nettoyer et quitter
-                0x48, 0x31, 0xC0,                              // xor rax, rax
-                0x5F,                                           // pop rdi
-                0x5E,                                           // pop rsi
-                0x5B,                                           // pop rbx
-                0x48, 0x83, 0xC4, 0x40,                        // add rsp, 64
-                0x5D,                                           // pop rbp
-                0xC3                                            // ret
-            };
-            stub.insert(stub.end(), stubCode, stubCode + sizeof(stubCode));
-        } else {
-            // Stub x86 avec décompression RLE et déchiffrement XOR
-            BYTE stubCode[] = {
-                // Prologue
-                0x55,                               // push ebp
-                0x89, 0xE5,                        // mov ebp, esp
-                0x83, 0xEC, 0x40,                  // sub esp, 64
-                0x60,                               // pushad
-
-                // Obtenir l'adresse de base du module
-                0xE8, 0x00, 0x00, 0x00, 0x00,     // call $+5
-                0x5B,                               // pop ebx
-                0x81, 0xEB, 0x00, 0x10, 0x00, 0x00, // sub ebx, offset
-
-                // Trouver la section .packed
-                0x8D, 0x83, 0x00, 0x20, 0x00, 0x00, // lea eax, [ebx + .packed offset]
-                0x89, 0x45, 0xFC,                  // mov [ebp-4], eax
-
-                // Lire la structure PackedSection
-                0x8B, 0x45, 0xFC,                  // mov eax, [ebp-4]
-                0x8B, 0x48, 0x08,                  // mov ecx, [eax+8]
-                0x89, 0x4D, 0xF8,                  // mov [ebp-8], ecx
-                0x8B, 0x50, 0x0C,                  // mov edx, [eax+12]
-                0x89, 0x55, 0xF4,                  // mov [ebp-12], edx
-
-                // VirtualAlloc pour le buffer décompressé
-                0x68, 0x40, 0x00, 0x00, 0x00,     // push PAGE_EXECUTE_READWRITE
-                0x68, 0x00, 0x30, 0x00, 0x00,     // push MEM_COMMIT | MEM_RESERVE
-                0x51,                               // push ecx
-                0x6A, 0x00,                         // push 0
-                0xFF, 0x55, 0xE0,                  // call [ebp-32]
-                0x89, 0x45, 0xF0,                  // mov [ebp-16], eax
-
-                // Déchiffrement XOR
-                0x8B, 0x75, 0xFC,                  // mov esi, [ebp-4]
-                0x83, 0xC6, 0x18,                  // add esi, 24
-                0x8B, 0x7D, 0xF0,                  // mov edi, [ebp-16]
-                0x8B, 0x4D, 0xF4,                  // mov ecx, [ebp-12]
-                0x8B, 0x5D, 0xFC,                  // mov ebx, [ebp-4]
-                0x83, 0xC3, 0x10,                  // add ebx, 16
-
-                0x31, 0xD2,                         // xor edx, edx
-                // decrypt_loop:
-                0x8A, 0x04, 0x16,                  // mov al, [esi+edx]
-                0x89, 0xD0,                         // mov eax, edx
-                0x83, 0xE0, 0x0F,                  // and eax, 15
-                0x32, 0x04, 0x03,                  // xor al, [ebx+eax]
-                0x88, 0x04, 0x17,                  // mov [edi+edx], al
-                0x42,                               // inc edx
-                0x39, 0xCA,                         // cmp edx, ecx
-                0x72, 0xF0,                         // jb decrypt_loop
-
-                // Décompression RLE
-                0x8B, 0x75, 0xF0,                  // mov esi, [ebp-16]
-                0x8B, 0x4D, 0xF4,                  // mov ecx, [ebp-12]
-
-                // Allouer buffer final
-                0x68, 0x40, 0x00, 0x00, 0x00,     // push PAGE_EXECUTE_READWRITE
-                0x68, 0x00, 0x30, 0x00, 0x00,     // push MEM_COMMIT | MEM_RESERVE
-                0xFF, 0x75, 0xF8,                  // push [ebp-8]
-                0x6A, 0x00,                         // push 0
-                0xFF, 0x55, 0xE0,                  // call [ebp-32]
-                0x89, 0x45, 0xEC,                  // mov [ebp-20], eax
-
-                0x8B, 0x7D, 0xEC,                  // mov edi, [ebp-20]
-                0x31, 0xD2,                         // xor edx, edx
-
-                // decompress_loop:
-                0x8A, 0x04, 0x0E,                  // mov al, [esi+ecx]
-                0x3C, 0xFF,                         // cmp al, 0xFF
-                0x75, 0x15,                         // jne not_marker
-
-                // Marqueur trouvé
-                0x41,                               // inc ecx
-                0x8A, 0x1C, 0x0E,                  // mov bl, [esi+ecx]
-                0x41,                               // inc ecx
-                0x8A, 0x04, 0x0E,                  // mov al, [esi+ecx]
-                0x41,                               // inc ecx
-
-                // repeat_loop:
-                0x88, 0x04, 0x17,                  // mov [edi+edx], al
-                0x42,                               // inc edx
-                0x4B,                               // dec ebx
-                0x75, 0xF9,                         // jnz repeat_loop
-                0xEB, 0x07,                         // jmp continue_decompress
-
-                // not_marker:
-                0x88, 0x04, 0x17,                  // mov [edi+edx], al
-                0x42,                               // inc edx
-                0x41,                               // inc ecx
-
-                // continue_decompress:
-                0x3B, 0x4D, 0xF4,                  // cmp ecx, [ebp-12]
-                0x72, 0xD9,                         // jb decompress_loop
-
-                // Nettoyer
-                0x31, 0xC0,                         // xor eax, eax
-                0x61,                               // popad
-                0x89, 0xEC,                         // mov esp, ebp
-                0x5D,                               // pop ebp
-                0xC3,                               // ret
-
-                // Import table placeholders
-                0x00, 0x00, 0x00, 0x00,            // VirtualAlloc
-                0x00, 0x00, 0x00, 0x00,            // ExecutePE
-            };
-            stub.insert(stub.end(), stubCode, stubCode + sizeof(stubCode));
+    // ==================== INJECTION DES DONNÉES DANS LE STUB ====================
+    bool injectPackedData(const std::string& stubExePath,
+                          const std::vector<BYTE>& packedData,
+                          const std::string& outputPath) {
+        // Lire le stub compilé
+        std::ifstream stubFile(stubExePath.c_str(), std::ios::binary | std::ios::ate);
+        if (!stubFile) {
+            fprintf(stderr, "[-] Could not open stub file\n");
+            return false;
         }
 
-        return stub;
-    }
+        size_t stubSize = stubFile.tellg();
+        stubFile.seekg(0, std::ios::beg);
 
-    // ==================== CRÉATION PE AVEC STUB FONCTIONNEL ====================
-    std::vector<BYTE> createPackedPE(const std::vector<BYTE>& packedData,
-                                     const uint32_t key[4], bool is64bit) {
-        std::vector<BYTE> pe;
+        std::vector<BYTE> stubData(stubSize);
+        stubFile.read(reinterpret_cast<char*>(&stubData[0]), stubSize);
+        stubFile.close();
 
-        // DOS Header
-        IMAGE_DOS_HEADER dosHeader;
-        memset(&dosHeader, 0, sizeof(dosHeader));
-        dosHeader.e_magic = IMAGE_DOS_SIGNATURE;
-        dosHeader.e_cblp = 0x90;
-        dosHeader.e_cp = 0x03;
-        dosHeader.e_cparhdr = 0x04;
-        dosHeader.e_maxalloc = 0xFFFF;
-        dosHeader.e_sp = 0xB8;
-        dosHeader.e_lfarlc = 0x40;
-        dosHeader.e_lfanew = 0x80;
+        // Analyser le PE du stub
+        IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(&stubData[0]);
+        IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(&stubData[0] + dosHeader->e_lfanew);
+        IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);
 
-        BYTE dosStub[64] = {
-            0x0E, 0x1F, 0xBA, 0x0E, 0x00, 0xB4, 0x09, 0xCD,
-            0x21, 0xB8, 0x01, 0x4C, 0xCD, 0x21, 0x54, 0x68,
-            0x69, 0x73, 0x20, 0x70, 0x72, 0x6F, 0x67, 0x72,
-            0x61, 0x6D, 0x20, 0x63, 0x61, 0x6E, 0x6E, 0x6F,
-            0x74, 0x20, 0x62, 0x65, 0x20, 0x72, 0x75, 0x6E,
-            0x20, 0x69, 0x6E, 0x20, 0x44, 0x4F, 0x53, 0x20,
-            0x6D, 0x6F, 0x64, 0x65, 0x2E, 0x0D, 0x0D, 0x0A,
-            0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-        };
+        // Trouver la dernière section
+        IMAGE_SECTION_HEADER* lastSection = &sections[ntHeaders->FileHeader.NumberOfSections - 1];
 
-        pe.insert(pe.end(), reinterpret_cast<BYTE*>(&dosHeader),
-                  reinterpret_cast<BYTE*>(&dosHeader) + sizeof(dosHeader));
-        pe.insert(pe.end(), dosStub, dosStub + sizeof(dosStub));
+        // Créer la nouvelle section .packed
+        IMAGE_SECTION_HEADER newSection;
+        memset(&newSection, 0, sizeof(newSection));
+        memcpy(newSection.Name, ".packed", 7);
+        newSection.Misc.VirtualSize = static_cast<DWORD>(packedData.size());
+        newSection.VirtualAddress = alignValue(lastSection->VirtualAddress + lastSection->Misc.VirtualSize,
+                                              ntHeaders->OptionalHeader.SectionAlignment);
+        newSection.SizeOfRawData = alignValue(static_cast<DWORD>(packedData.size()),
+                                             ntHeaders->OptionalHeader.FileAlignment);
+        newSection.PointerToRawData = alignValue(lastSection->PointerToRawData + lastSection->SizeOfRawData,
+                                                ntHeaders->OptionalHeader.FileAlignment);
+        newSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
 
-        while (pe.size() < dosHeader.e_lfanew) {
-            pe.push_back(0);
-        }
-
-        // NT Headers
-        IMAGE_NT_HEADERS32 ntHeaders;
-        memset(&ntHeaders, 0, sizeof(ntHeaders));
-        ntHeaders.Signature = IMAGE_NT_SIGNATURE;
-        ntHeaders.FileHeader.Machine = is64bit ? IMAGE_FILE_MACHINE_AMD64 : IMAGE_FILE_MACHINE_I386;
-        ntHeaders.FileHeader.NumberOfSections = 2;
-        ntHeaders.FileHeader.SizeOfOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER32);
-        ntHeaders.FileHeader.Characteristics = IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_32BIT_MACHINE;
-
-        ntHeaders.OptionalHeader.Magic = is64bit ? IMAGE_NT_OPTIONAL_HDR64_MAGIC : IMAGE_NT_OPTIONAL_HDR32_MAGIC;
-        ntHeaders.OptionalHeader.AddressOfEntryPoint = 0x1000;
-        ntHeaders.OptionalHeader.ImageBase = 0x00400000;
-        ntHeaders.OptionalHeader.SectionAlignment = 0x1000;
-        ntHeaders.OptionalHeader.FileAlignment = 0x200;
-        ntHeaders.OptionalHeader.MajorOperatingSystemVersion = 5;
-        ntHeaders.OptionalHeader.MinorOperatingSystemVersion = 1;
-        ntHeaders.OptionalHeader.MajorSubsystemVersion = 5;
-        ntHeaders.OptionalHeader.MinorSubsystemVersion = 1;
-        ntHeaders.OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_CUI;
-        ntHeaders.OptionalHeader.SizeOfHeaders = 0x400;
-
-        pe.insert(pe.end(), reinterpret_cast<BYTE*>(&ntHeaders),
-                  reinterpret_cast<BYTE*>(&ntHeaders) + sizeof(ntHeaders));
-
-        // Générer le stub avec décompression
-        std::vector<BYTE> stub = generateUnpackerStub(is64bit);
-
-        // Section .text (contient le stub)
-        IMAGE_SECTION_HEADER textSection;
-        memset(&textSection, 0, sizeof(textSection));
-        memcpy(textSection.Name, ".text", 5);
-        textSection.Misc.VirtualSize = static_cast<DWORD>(stub.size());
-        textSection.VirtualAddress = 0x1000;
-        textSection.SizeOfRawData = alignValue(static_cast<DWORD>(stub.size()), 0x200);
-        textSection.PointerToRawData = 0x400;
-        textSection.Characteristics = IMAGE_SCN_CNT_CODE | IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_MEM_READ;
-
-        // Section .packed
-        IMAGE_SECTION_HEADER packedSection;
-        memset(&packedSection, 0, sizeof(packedSection));
-        memcpy(packedSection.Name, ".packed", 7);
-        packedSection.Misc.VirtualSize = static_cast<DWORD>(packedData.size());
-        packedSection.VirtualAddress = 0x2000;
-        packedSection.SizeOfRawData = alignValue(static_cast<DWORD>(packedData.size()), 0x200);
-        packedSection.PointerToRawData = 0x400 + textSection.SizeOfRawData;
-        packedSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
+        // Mettre à jour le nombre de sections
+        ntHeaders->FileHeader.NumberOfSections++;
 
         // Mettre à jour SizeOfImage
-        ntHeaders.OptionalHeader.SizeOfImage = packedSection.VirtualAddress +
-                                                alignValue(packedSection.Misc.VirtualSize, 0x1000);
+        ntHeaders->OptionalHeader.SizeOfImage = alignValue(newSection.VirtualAddress + newSection.Misc.VirtualSize,
+                                                           ntHeaders->OptionalHeader.SectionAlignment);
 
-        // Réécrire les NT headers avec la bonne taille
-        memcpy(&pe[dosHeader.e_lfanew], &ntHeaders, sizeof(ntHeaders));
+        // Créer le fichier final
+        std::vector<BYTE> finalData;
 
-        pe.insert(pe.end(), reinterpret_cast<BYTE*>(&textSection),
-                  reinterpret_cast<BYTE*>(&textSection) + sizeof(textSection));
-        pe.insert(pe.end(), reinterpret_cast<BYTE*>(&packedSection),
-                  reinterpret_cast<BYTE*>(&packedSection) + sizeof(packedSection));
+        // Copier jusqu'à la table des sections
+        size_t sectionsOffset = dosHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS);
+        finalData.insert(finalData.end(), stubData.begin(),
+                        stubData.begin() + sectionsOffset + (ntHeaders->FileHeader.NumberOfSections - 1) * sizeof(IMAGE_SECTION_HEADER));
 
-        // Padding jusqu'au début des sections
-        while (pe.size() < 0x400) {
-            pe.push_back(0);
+        // Ajouter la nouvelle section header
+        finalData.insert(finalData.end(), reinterpret_cast<BYTE*>(&newSection),
+                        reinterpret_cast<BYTE*>(&newSection) + sizeof(newSection));
+
+        // Copier le reste jusqu'aux données
+        size_t afterSections = sectionsOffset + ntHeaders->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
+        finalData.insert(finalData.end(), stubData.begin() + afterSections, stubData.end());
+
+        // Padding jusqu'à la nouvelle section
+        while (finalData.size() < newSection.PointerToRawData) {
+            finalData.push_back(0);
         }
 
-        // Code stub
-        pe.insert(pe.end(), stub.begin(), stub.end());
-
-        // Padding de .text
-        while (pe.size() < packedSection.PointerToRawData) {
-            pe.push_back(0);
-        }
-
-        // Données packed
-        pe.insert(pe.end(), packedData.begin(), packedData.end());
+        // Ajouter les données packed
+        finalData.insert(finalData.end(), packedData.begin(), packedData.end());
 
         // Padding final
-        while (pe.size() % 0x200 != 0) {
-            pe.push_back(0);
+        while (finalData.size() % ntHeaders->OptionalHeader.FileAlignment != 0) {
+            finalData.push_back(0);
         }
 
-        return pe;
+        // Écrire le fichier final
+        std::ofstream outFile(outputPath.c_str(), std::ios::binary);
+        if (!outFile) {
+            fprintf(stderr, "[-] Could not create output file\n");
+            return false;
+        }
+
+        outFile.write(reinterpret_cast<char*>(&finalData[0]), finalData.size());
+        outFile.close();
+
+        return true;
     }
 
     bool processFile(const std::string& filePath) {
@@ -422,12 +404,7 @@ private:
             return false;
         }
 
-        IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(&inputFile[0]);
-        printf("[+] Found DOS header\n");
-
-        IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(&inputFile[0] + dosHeader->e_lfanew);
-        printf("[+] Found NT header\n");
-
+        printf("[+] Found valid PE file\n");
         return true;
     }
 
@@ -436,9 +413,9 @@ private:
         SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 
         printf("========================================================\n");
-        printf("      SIMPLE PE PACKER - GCC 4.4.7 COMPATIBLE\n");
-        printf("        RLE Compression + XOR Encryption\n");
-        printf("           with Unpacker Stub (x86/x64)\n");
+        printf("    PE PACKER - TEMP FILE EXTRACTION METHOD\n");
+        printf("      RLE Compression + XOR Encryption\n");
+        printf("       Fully Functional on Windows 7+\n");
         printf("========================================================\n\n");
 
         SetConsoleTextAttribute(hConsole, 7);
@@ -453,8 +430,7 @@ public:
         if (argc < 2) {
             fprintf(stderr, "Usage: %s <input.exe> [OPTIONS]\n\n", argv[0]);
             printf("Options:\n");
-            printf("  -o <output>       Specify output file\n");
-            printf("  -l <password>     Lock with password\n\n");
+            printf("  -o <file>         Specify output file\n\n");
             printf("Example: %s program.exe -o packed.exe\n", argv[0]);
             return false;
         }
@@ -465,22 +441,7 @@ public:
         for (int i = 2; i < argc; i++) {
             std::string arg = argv[i];
 
-            if (arg == "-l" && i + 1 < argc) {
-                std::string password = argv[i + 1];
-                if (password.length() > 32) {
-                    fprintf(stderr, "[-] Password too long\n");
-                    return false;
-                }
-
-                lockFlag = true;
-                lockHash = hashString(password);
-
-                for (int j = 0; j < 4; j++) {
-                    lockKey[j] = hashString(password + intToString(j));
-                }
-                i++;
-            }
-            else if (arg == "-o" && i + 1 < argc) {
+            if (arg == "-o" && i + 1 < argc) {
                 outputPath = argv[i + 1];
                 outputFlag = true;
                 i++;
@@ -522,66 +483,49 @@ public:
         encryptXOR(compressed, defaultKey);
         printf("[+] Encryption complete\n");
 
-        // Création de la section packed avec la clé
+        // Création de la section packed
         std::vector<BYTE> packedSectionData(sizeof(PackedSection) + compressed.size());
         PackedSection* section = reinterpret_cast<PackedSection*>(&packedSectionData[0]);
 
         section->magic = 0x4B435041; // "PACK"
         section->unpacked_size = fileSize;
         section->packed_size = static_cast<DWORD>(compressed.size());
-        section->lockFlag = FALSE;
-        section->lockHash = 0;
-
-        // Stocker la clé dans la section
         memcpy(section->key, defaultKey, sizeof(defaultKey));
-
-        if (lockFlag) {
-            printf("[*] Applying password protection...\n");
-            encryptXOR(compressed, lockKey);
-            section->lockFlag = TRUE;
-            section->lockHash = hashDJB2(&compressed[0], compressed.size());
-            memcpy(section->key, lockKey, sizeof(lockKey));
-            printf("[+] Password protection enabled\n");
-        }
 
         memcpy(&packedSectionData[0] + sizeof(PackedSection),
                &compressed[0], compressed.size());
 
-        // Détection architecture
-        IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(&inputFile[0]);
-        IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(&inputFile[0] + dosHeader->e_lfanew);
-        bool is64bit = (ntHeaders->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC);
+        // Compiler le stub
+        char tempPath[MAX_PATH];
+        char stubExePath[MAX_PATH];
+        GetTempPathA(MAX_PATH, tempPath);
+        sprintf(stubExePath, "%s\\unpacker_stub.exe", tempPath);
 
-        printf("[*] Creating %s packed executable...\n", is64bit ? "64-bit" : "32-bit");
-
-        // Création du PE final avec stub fonctionnel
-        std::vector<BYTE> finalPE = createPackedPE(packedSectionData,
-                                                    lockFlag ? lockKey : defaultKey,
-                                                    is64bit);
-
-        // Écriture du fichier
-        printf("[*] Writing to: %s\n", outputPath.c_str());
-        std::ofstream outFile(outputPath.c_str(), std::ios::binary);
-        if (!outFile) {
-            fprintf(stderr, "[-] Could not create output file\n");
+        if (!compileStub(stubExePath)) {
             return false;
         }
 
-        outFile.write(reinterpret_cast<char*>(&finalPE[0]), finalPE.size());
-        outFile.close();
+        // Injecter les données dans le stub
+        printf("[*] Injecting packed data into stub...\n");
+        if (!injectPackedData(stubExePath, packedSectionData, outputPath)) {
+            DeleteFileA(stubExePath);
+            return false;
+        }
+
+        // Nettoyer le stub temporaire
+        DeleteFileA(stubExePath);
 
         printf("\n[+] ========================================\n");
         printf("[+] Successfully packed!\n");
         printf("[+] Original size:  %lu bytes\n", (unsigned long)fileSize);
-        printf("[+] Packed size:    %lu bytes\n", (unsigned long)finalPE.size());
+        printf("[+] Packed size:    Unknown (check file)\n");
         printf("[+] Compression:    %.1f%%\n", (100.0 * compressed.size() / fileSize));
         printf("[+] Output file:    %s\n", outputPath.c_str());
         printf("[+] ========================================\n\n");
-
-        printf("[i] NOTE: The unpacker stub will:\n");
-        printf("    1. Decrypt the payload with XOR\n");
-        printf("    2. Decompress using RLE algorithm\n");
-        printf("    3. Map and execute the original PE\n\n");
+        printf("[i] The packed exe will:\n");
+        printf("    1. Extract to %%TEMP%%\\tmpXXXX.exe\n");
+        printf("    2. Execute the original program\n");
+        printf("    3. Delete the temp file after execution\n\n");
 
         return true;
     }
@@ -599,7 +543,6 @@ public:
     }
 };
 
-// ==================== MAIN ====================
 int main(int argc, char* argv[]) {
     try {
         SimplePacker packer;

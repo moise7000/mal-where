@@ -151,18 +151,24 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        PROCESS_INFORMATION pi;\n");
     fprintf(f, "        memset(&si, 0, sizeof(si));\n");
     fprintf(f, "        memset(&pi, 0, sizeof(pi));\n");
-    fprintf(f, "        si.cb = sizeof(si);\n\n");
+    fprintf(f, "        si.cb = sizeof(si);\n");
+    fprintf(f, "        si.dwFlags = STARTF_USESHOWWINDOW;\n");
+    fprintf(f, "        si.wShowWindow = SW_HIDE;\n\n");
 
-    fprintf(f, "        if (CreateProcessA(tempFile, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {\n");
+    fprintf(f, "        if (CreateProcessA(tempFile, lpCmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {\n");
     fprintf(f, "            WaitForSingleObject(pi.hProcess, INFINITE);\n");
+    fprintf(f, "            DWORD exitCode = 0;\n");
+    fprintf(f, "            GetExitCodeProcess(pi.hProcess, &exitCode);\n");
     fprintf(f, "            CloseHandle(pi.hProcess);\n");
     fprintf(f, "            CloseHandle(pi.hThread);\n");
+    fprintf(f, "            DeleteFileA(tempFile);\n");
+    fprintf(f, "            return exitCode;\n");
     fprintf(f, "        }\n\n");
 
     fprintf(f, "        DeleteFileA(tempFile);\n");
     fprintf(f, "    }\n\n");
 
-    fprintf(f, "    return 0;\n");
+    fprintf(f, "    return 1;\n");
     fprintf(f, "}\n");
 
     fclose(f);

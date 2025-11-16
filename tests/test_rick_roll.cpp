@@ -3,7 +3,7 @@
 //
 
 
-#include "../devil/ASCII_Rickroll.h"
+#include "../devil/Rickroll.h"
 
 int main(int argc, char* argv[]) {
     // Vérifie si on est dans le nouveau terminal

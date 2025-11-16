@@ -1,4 +1,3 @@
-
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
@@ -177,26 +176,64 @@ private:
     bool compileStub(const std::string& stubExePath) {
         char tempPath[MAX_PATH];
         char stubSourcePath[MAX_PATH];
+        char errorLogPath[MAX_PATH];
         GetTempPathA(MAX_PATH, tempPath);
         sprintf(stubSourcePath, "%s\\stub_source.c", tempPath);
+        sprintf(errorLogPath, "%s\\stub_compile_error.txt", tempPath);
 
         printf("[*] Generating stub source code...\n");
+        printf("    Source: %s\n", stubSourcePath);
         generateStubSource(stubSourcePath);
 
-        char compileCmd[1024];
-        sprintf(compileCmd, "gcc -O2 -s -mwindows -o \"%s\" \"%s\" 2>nul",
-                stubExePath.c_str(), stubSourcePath);
-
-        printf("[*] Compiling unpacker stub...\n");
-        int result = system(compileCmd);
-
-        DeleteFileA(stubSourcePath);
-
-        if (result != 0) {
-            fprintf(stderr, "[-] Failed to compile stub. Make sure GCC is in PATH.\n");
-            fprintf(stderr, "[-] Try: set PATH=%%PATH%%;C:\\MinGW\\bin\n");
+        // Vérifier que le fichier a été créé
+        HANDLE hTest = CreateFileA(stubSourcePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+        if (hTest == INVALID_HANDLE_VALUE) {
+            fprintf(stderr, "[-] Failed to create stub source file\n");
             return false;
         }
+        CloseHandle(hTest);
+
+        char compileCmd[1024];
+        // Rediriger les erreurs vers un fichier au lieu de les supprimer
+        sprintf(compileCmd, "gcc -O2 -s -mwindows -o \"%s\" \"%s\" 2>\"%s\"",
+                stubExePath.c_str(), stubSourcePath, errorLogPath);
+
+        printf("[*] Compiling unpacker stub...\n");
+        printf("    Command: %s\n", compileCmd);
+        int result = system(compileCmd);
+
+        // Vérifier si le stub a été créé
+        HANDLE hStub = CreateFileA(stubExePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+        bool stubExists = (hStub != INVALID_HANDLE_VALUE);
+        if (stubExists) CloseHandle(hStub);
+
+        if (result != 0 || !stubExists) {
+            fprintf(stderr, "[-] Failed to compile stub (exit code: %d)\n", result);
+
+            // Afficher les erreurs de compilation
+            FILE* errLog = fopen(errorLogPath, "r");
+            if (errLog) {
+                fprintf(stderr, "\n--- Compilation errors ---\n");
+                char line[512];
+                while (fgets(line, sizeof(line), errLog)) {
+                    fprintf(stderr, "%s", line);
+                }
+                fclose(errLog);
+                fprintf(stderr, "--- End of errors ---\n\n");
+            }
+
+            fprintf(stderr, "[-] Stub source saved at: %s\n", stubSourcePath);
+            fprintf(stderr, "[-] Try compiling manually: gcc -mwindows -o stub.exe \"%s\"\n", stubSourcePath);
+
+            DeleteFileA(errorLogPath);
+            // Ne pas supprimer le source pour debug
+            // DeleteFileA(stubSourcePath);
+            return false;
+        }
+
+        // Nettoyer les fichiers temporaires
+        DeleteFileA(stubSourcePath);
+        DeleteFileA(errorLogPath);
 
         printf("[+] Stub compiled successfully\n");
         return true;

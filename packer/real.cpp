@@ -70,21 +70,27 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    return writePos;\n");
     fprintf(f, "}\n\n");
 
-    fprintf(f, "int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {\n");
+    // Utiliser int main au lieu de WinMain pour avoir la console
+    fprintf(f, "int main(int argc, char* argv[]) {\n");
     fprintf(f, "    char exePath[MAX_PATH];\n");
     fprintf(f, "    GetModuleFileNameA(NULL, exePath, MAX_PATH);\n\n");
 
     fprintf(f, "    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);\n");
-    fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) return 1;\n\n");
+    fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) {\n");
+    fprintf(f, "        printf(\"Error: Cannot open self\\n\");\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
 
     fprintf(f, "    HANDLE hMapping = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);\n");
     fprintf(f, "    if (!hMapping) {\n");
+    fprintf(f, "        printf(\"Error: Cannot map file\\n\");\n");
     fprintf(f, "        CloseHandle(hFile);\n");
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
     fprintf(f, "    unsigned char* fileData = (unsigned char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);\n");
     fprintf(f, "    if (!fileData) {\n");
+    fprintf(f, "        printf(\"Error: Cannot map view\\n\");\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
     fprintf(f, "        return 1;\n");
@@ -106,7 +112,16 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        }\n");
     fprintf(f, "    }\n\n");
 
-    fprintf(f, "    if (!packedSec || packedSec->magic != 0x4B435041) {\n");
+    fprintf(f, "    if (!packedSec) {\n");
+    fprintf(f, "        printf(\"Error: .packed section not found\\n\");\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    if (packedSec->magic != 0x4B435041) {\n");
+    fprintf(f, "        printf(\"Error: Invalid magic (0x%%08X)\\n\", packedSec->magic);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
@@ -117,6 +132,7 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n\n");
 
     fprintf(f, "    if (!decrypted || !decompressed) {\n");
+    fprintf(f, "        printf(\"Error: Memory allocation failed\\n\");\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
@@ -127,6 +143,16 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    decryptXOR(decrypted, packedSec->packed_size, packedSec->key);\n");
     fprintf(f, "    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);\n\n");
 
+    fprintf(f, "    if (decompSize == 0 || decompSize > packedSec->unpacked_size) {\n");
+    fprintf(f, "        printf(\"Error: Decompression failed (size=%%lu)\\n\", decompSize);\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
     fprintf(f, "    char tempPath[MAX_PATH];\n");
     fprintf(f, "    char tempFile[MAX_PATH];\n");
     fprintf(f, "    GetTempPathA(MAX_PATH, tempPath);\n");
@@ -135,40 +161,68 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    char* ext = strrchr(tempFile, '.');\n");
     fprintf(f, "    if (ext) strcpy(ext, \".exe\");\n\n");
 
-    fprintf(f, "    HANDLE hTempFile = CreateFileA(tempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);\n");
-    fprintf(f, "    if (hTempFile != INVALID_HANDLE_VALUE) {\n");
-    fprintf(f, "        DWORD written;\n");
-    fprintf(f, "        WriteFile(hTempFile, decompressed, decompSize, &written, NULL);\n");
-    fprintf(f, "        CloseHandle(hTempFile);\n\n");
-
+    fprintf(f, "    HANDLE hTempFile = CreateFileA(tempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);\n");
+    fprintf(f, "    if (hTempFile == INVALID_HANDLE_VALUE) {\n");
+    fprintf(f, "        printf(\"Error: Cannot create temp file: %%s\\n\", tempFile);\n");
     fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
     fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
-    fprintf(f, "        CloseHandle(hFile);\n\n");
-
-    fprintf(f, "        STARTUPINFOA si;\n");
-    fprintf(f, "        PROCESS_INFORMATION pi;\n");
-    fprintf(f, "        memset(&si, 0, sizeof(si));\n");
-    fprintf(f, "        memset(&pi, 0, sizeof(pi));\n");
-    fprintf(f, "        si.cb = sizeof(si);\n");
-    fprintf(f, "        si.dwFlags = STARTF_USESHOWWINDOW;\n");
-    fprintf(f, "        si.wShowWindow = SW_HIDE;\n\n");
-
-    fprintf(f, "        if (CreateProcessA(tempFile, lpCmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {\n");
-    fprintf(f, "            WaitForSingleObject(pi.hProcess, INFINITE);\n");
-    fprintf(f, "            DWORD exitCode = 0;\n");
-    fprintf(f, "            GetExitCodeProcess(pi.hProcess, &exitCode);\n");
-    fprintf(f, "            CloseHandle(pi.hProcess);\n");
-    fprintf(f, "            CloseHandle(pi.hThread);\n");
-    fprintf(f, "            DeleteFileA(tempFile);\n");
-    fprintf(f, "            return exitCode;\n");
-    fprintf(f, "        }\n\n");
-
-    fprintf(f, "        DeleteFileA(tempFile);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    fprintf(f, "    return 1;\n");
+    fprintf(f, "    DWORD written;\n");
+    fprintf(f, "    BOOL writeOk = WriteFile(hTempFile, decompressed, decompSize, &written, NULL);\n");
+    fprintf(f, "    CloseHandle(hTempFile);\n\n");
+
+    fprintf(f, "    if (!writeOk || written != decompSize) {\n");
+    fprintf(f, "        printf(\"Error: Write failed (%%lu / %%lu bytes)\\n\", written, decompSize);\n");
+    fprintf(f, "        DeleteFileA(tempFile);\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "    VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "    UnmapViewOfFile(fileData);\n");
+    fprintf(f, "    CloseHandle(hMapping);\n");
+    fprintf(f, "    CloseHandle(hFile);\n\n");
+
+    // Construire la ligne de commande avec tous les arguments
+    fprintf(f, "    char cmdLine[32768] = {0};\n");
+    fprintf(f, "    if (argc > 1) {\n");
+    fprintf(f, "        for (i = 1; i < argc; i++) {\n");
+    fprintf(f, "            if (i > 1) strcat(cmdLine, \" \");\n");
+    fprintf(f, "            strcat(cmdLine, argv[i]);\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    STARTUPINFOA si;\n");
+    fprintf(f, "    PROCESS_INFORMATION pi;\n");
+    fprintf(f, "    memset(&si, 0, sizeof(si));\n");
+    fprintf(f, "    memset(&pi, 0, sizeof(pi));\n");
+    fprintf(f, "    si.cb = sizeof(si);\n\n");
+
+    fprintf(f, "    BOOL created = CreateProcessA(tempFile, cmdLine[0] ? cmdLine : NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);\n");
+    fprintf(f, "    if (!created) {\n");
+    fprintf(f, "        printf(\"Error: Cannot start process (error %%lu)\\n\", GetLastError());\n");
+    fprintf(f, "        DeleteFileA(tempFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    WaitForSingleObject(pi.hProcess, INFINITE);\n");
+    fprintf(f, "    DWORD exitCode = 0;\n");
+    fprintf(f, "    GetExitCodeProcess(pi.hProcess, &exitCode);\n");
+    fprintf(f, "    CloseHandle(pi.hProcess);\n");
+    fprintf(f, "    CloseHandle(pi.hThread);\n");
+    fprintf(f, "    DeleteFileA(tempFile);\n\n");
+
+    fprintf(f, "    return exitCode;\n");
     fprintf(f, "}\n");
 
     fclose(f);
@@ -203,8 +257,8 @@ private:
         CloseHandle(hTest);
 
         char compileCmd[1024];
-        // Rediriger les erreurs vers un fichier au lieu de les supprimer
-        sprintf(compileCmd, "gcc -O2 -s -mwindows -o \"%s\" \"%s\" 2>\"%s\"",
+        // Compiler sans -mwindows pour avoir une application console
+        sprintf(compileCmd, "gcc -O2 -s -o \"%s\" \"%s\" 2>\"%s\"",
                 stubExePath.c_str(), stubSourcePath, errorLogPath);
 
         printf("[*] Compiling unpacker stub...\n");

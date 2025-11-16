@@ -38,7 +38,8 @@ void generateStubSource(const char* outputPath) {
 
     fprintf(f, "void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {\n");
     fprintf(f, "    unsigned char* keyBytes = (unsigned char*)key;\n");
-    fprintf(f, "    for (DWORD i = 0; i < size; i++) {\n");
+    fprintf(f, "    DWORD i;\n");
+    fprintf(f, "    for (i = 0; i < size; i++) {\n");
     fprintf(f, "        data[i] ^= keyBytes[i %% 16];\n");
     fprintf(f, "    }\n");
     fprintf(f, "}\n\n");
@@ -46,6 +47,7 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "DWORD decompressRLE(unsigned char* input, DWORD inputSize, unsigned char* output, DWORD outputSize) {\n");
     fprintf(f, "    DWORD writePos = 0;\n");
     fprintf(f, "    DWORD readPos = 0;\n");
+    fprintf(f, "    int i;\n");
     fprintf(f, "    while (readPos < inputSize && writePos < outputSize) {\n");
     fprintf(f, "        unsigned char current = input[readPos];\n");
     fprintf(f, "        if (current == 0xFF && readPos + 2 < inputSize) {\n");
@@ -55,7 +57,7 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "                readPos += 2;\n");
     fprintf(f, "            } else {\n");
     fprintf(f, "                unsigned char value = input[readPos + 2];\n");
-    fprintf(f, "                for (int i = 0; i < count && writePos < outputSize; i++) {\n");
+    fprintf(f, "                for (i = 0; i < count && writePos < outputSize; i++) {\n");
     fprintf(f, "                    output[writePos++] = value;\n");
     fprintf(f, "                }\n");
     fprintf(f, "                readPos += 3;\n");
@@ -93,9 +95,10 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);\n\n");
 
     fprintf(f, "    struct PackedSection* packedSec = NULL;\n");
-    fprintf(f, "    unsigned char* packedData = NULL;\n\n");
+    fprintf(f, "    unsigned char* packedData = NULL;\n");
+    fprintf(f, "    int i;\n\n");
 
-    fprintf(f, "    for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {\n");
+    fprintf(f, "    for (i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {\n");
     fprintf(f, "        if (memcmp(sections[i].Name, \".packed\", 7) == 0) {\n");
     fprintf(f, "            packedSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
     fprintf(f, "            packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");

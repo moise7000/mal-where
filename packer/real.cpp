@@ -1,3 +1,4 @@
+
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,168 +15,156 @@ struct PackedSection {
     DWORD magic;             // Signature 0x4B435041 ("PACK")
     DWORD unpacked_size;
     DWORD packed_size;
-    uint32_t key[4];         // Clé de déchiffrement
+    DWORD key[4];            // Clé de déchiffrement
     // Le payload suit immédiatement après
 };
 #pragma pack(pop)
 
-// ==================== CODE DU STUB UNPACKER (sera compilé séparément) ====================
-// Ce code sera le stub d'extraction injecté dans l'exe packed
+// ==================== CODE DU STUB UNPACKER ====================
+// Générer le code source du stub dans un fichier
+void generateStubSource(const char* outputPath) {
+    FILE* f = fopen(outputPath, "w");
+    if (!f) return;
 
-const char* stubSourceCode = R"(
-#include <windows.h>
-#include <stdio.h>
+    fprintf(f, "#include <windows.h>\n");
+    fprintf(f, "#include <stdio.h>\n\n");
+    fprintf(f, "#pragma pack(push, 1)\n");
+    fprintf(f, "struct PackedSection {\n");
+    fprintf(f, "    DWORD magic;\n");
+    fprintf(f, "    DWORD unpacked_size;\n");
+    fprintf(f, "    DWORD packed_size;\n");
+    fprintf(f, "    DWORD key[4];\n");
+    fprintf(f, "};\n");
+    fprintf(f, "#pragma pack(pop)\n\n");
 
-#pragma pack(push, 1)
-struct PackedSection {
-    DWORD magic;
-    DWORD unpacked_size;
-    DWORD packed_size;
-    DWORD key[4];
-};
-#pragma pack(pop)
+    fprintf(f, "void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {\n");
+    fprintf(f, "    unsigned char* keyBytes = (unsigned char*)key;\n");
+    fprintf(f, "    for (DWORD i = 0; i < size; i++) {\n");
+    fprintf(f, "        data[i] ^= keyBytes[i %% 16];\n");
+    fprintf(f, "    }\n");
+    fprintf(f, "}\n\n");
 
-void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {
-    unsigned char* keyBytes = (unsigned char*)key;
-    for (DWORD i = 0; i < size; i++) {
-        data[i] ^= keyBytes[i % 16];
-    }
+    fprintf(f, "DWORD decompressRLE(unsigned char* input, DWORD inputSize, unsigned char* output, DWORD outputSize) {\n");
+    fprintf(f, "    DWORD writePos = 0;\n");
+    fprintf(f, "    DWORD readPos = 0;\n");
+    fprintf(f, "    while (readPos < inputSize && writePos < outputSize) {\n");
+    fprintf(f, "        unsigned char current = input[readPos];\n");
+    fprintf(f, "        if (current == 0xFF && readPos + 2 < inputSize) {\n");
+    fprintf(f, "            unsigned char count = input[readPos + 1];\n");
+    fprintf(f, "            if (count == 0) {\n");
+    fprintf(f, "                output[writePos++] = 0xFF;\n");
+    fprintf(f, "                readPos += 2;\n");
+    fprintf(f, "            } else {\n");
+    fprintf(f, "                unsigned char value = input[readPos + 2];\n");
+    fprintf(f, "                for (int i = 0; i < count && writePos < outputSize; i++) {\n");
+    fprintf(f, "                    output[writePos++] = value;\n");
+    fprintf(f, "                }\n");
+    fprintf(f, "                readPos += 3;\n");
+    fprintf(f, "            }\n");
+    fprintf(f, "        } else {\n");
+    fprintf(f, "            output[writePos++] = current;\n");
+    fprintf(f, "            readPos++;\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "    }\n");
+    fprintf(f, "    return writePos;\n");
+    fprintf(f, "}\n\n");
+
+    fprintf(f, "int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {\n");
+    fprintf(f, "    char exePath[MAX_PATH];\n");
+    fprintf(f, "    GetModuleFileNameA(NULL, exePath, MAX_PATH);\n\n");
+
+    fprintf(f, "    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);\n");
+    fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) return 1;\n\n");
+
+    fprintf(f, "    HANDLE hMapping = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);\n");
+    fprintf(f, "    if (!hMapping) {\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    unsigned char* fileData = (unsigned char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);\n");
+    fprintf(f, "    if (!fileData) {\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)fileData;\n");
+    fprintf(f, "    IMAGE_NT_HEADERS* ntHeaders = (IMAGE_NT_HEADERS*)(fileData + dosHeader->e_lfanew);\n");
+    fprintf(f, "    IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);\n\n");
+
+    fprintf(f, "    struct PackedSection* packedSec = NULL;\n");
+    fprintf(f, "    unsigned char* packedData = NULL;\n\n");
+
+    fprintf(f, "    for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {\n");
+    fprintf(f, "        if (memcmp(sections[i].Name, \".packed\", 7) == 0) {\n");
+    fprintf(f, "            packedSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
+    fprintf(f, "            packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");
+    fprintf(f, "            break;\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    if (!packedSec || packedSec->magic != 0x4B435041) {\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n");
+    fprintf(f, "    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n\n");
+
+    fprintf(f, "    if (!decrypted || !decompressed) {\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    memcpy(decrypted, packedData, packedSec->packed_size);\n");
+    fprintf(f, "    decryptXOR(decrypted, packedSec->packed_size, packedSec->key);\n");
+    fprintf(f, "    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);\n\n");
+
+    fprintf(f, "    char tempPath[MAX_PATH];\n");
+    fprintf(f, "    char tempFile[MAX_PATH];\n");
+    fprintf(f, "    GetTempPathA(MAX_PATH, tempPath);\n");
+    fprintf(f, "    GetTempFileNameA(tempPath, \"tmp\", 0, tempFile);\n\n");
+
+    fprintf(f, "    char* ext = strrchr(tempFile, '.');\n");
+    fprintf(f, "    if (ext) strcpy(ext, \".exe\");\n\n");
+
+    fprintf(f, "    HANDLE hTempFile = CreateFileA(tempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);\n");
+    fprintf(f, "    if (hTempFile != INVALID_HANDLE_VALUE) {\n");
+    fprintf(f, "        DWORD written;\n");
+    fprintf(f, "        WriteFile(hTempFile, decompressed, decompSize, &written, NULL);\n");
+    fprintf(f, "        CloseHandle(hTempFile);\n\n");
+
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n\n");
+
+    fprintf(f, "        STARTUPINFOA si;\n");
+    fprintf(f, "        PROCESS_INFORMATION pi;\n");
+    fprintf(f, "        memset(&si, 0, sizeof(si));\n");
+    fprintf(f, "        memset(&pi, 0, sizeof(pi));\n");
+    fprintf(f, "        si.cb = sizeof(si);\n\n");
+
+    fprintf(f, "        if (CreateProcessA(tempFile, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {\n");
+    fprintf(f, "            WaitForSingleObject(pi.hProcess, INFINITE);\n");
+    fprintf(f, "            CloseHandle(pi.hProcess);\n");
+    fprintf(f, "            CloseHandle(pi.hThread);\n");
+    fprintf(f, "        }\n\n");
+
+    fprintf(f, "        DeleteFileA(tempFile);\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    return 0;\n");
+    fprintf(f, "}\n");
+
+    fclose(f);
 }
-
-DWORD decompressRLE(unsigned char* input, DWORD inputSize, unsigned char* output, DWORD outputSize) {
-    DWORD writePos = 0;
-    DWORD readPos = 0;
-
-    while (readPos < inputSize && writePos < outputSize) {
-        unsigned char current = input[readPos];
-
-        if (current == 0xFF && readPos + 2 < inputSize) {
-            unsigned char count = input[readPos + 1];
-            if (count == 0) {
-                output[writePos++] = 0xFF;
-                readPos += 2;
-            } else {
-                unsigned char value = input[readPos + 2];
-                for (int i = 0; i < count && writePos < outputSize; i++) {
-                    output[writePos++] = value;
-                }
-                readPos += 3;
-            }
-        } else {
-            output[writePos++] = current;
-            readPos++;
-        }
-    }
-
-    return writePos;
-}
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    // Obtenir le chemin de l'exécutable actuel
-    char exePath[MAX_PATH];
-    GetModuleFileNameA(NULL, exePath, MAX_PATH);
-
-    // Ouvrir l'exécutable pour lire la section packed
-    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) return 1;
-
-    // Mapper le fichier en mémoire
-    HANDLE hMapping = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-    if (!hMapping) {
-        CloseHandle(hFile);
-        return 1;
-    }
-
-    unsigned char* fileData = (unsigned char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
-    if (!fileData) {
-        CloseHandle(hMapping);
-        CloseHandle(hFile);
-        return 1;
-    }
-
-    // Trouver la section .packed
-    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)fileData;
-    IMAGE_NT_HEADERS* ntHeaders = (IMAGE_NT_HEADERS*)(fileData + dosHeader->e_lfanew);
-    IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);
-
-    PackedSection* packedSec = NULL;
-    unsigned char* packedData = NULL;
-
-    for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {
-        if (memcmp(sections[i].Name, ".packed", 7) == 0) {
-            packedSec = (PackedSection*)(fileData + sections[i].PointerToRawData);
-            packedData = (unsigned char*)packedSec + sizeof(PackedSection);
-            break;
-        }
-    }
-
-    if (!packedSec || packedSec->magic != 0x4B435041) {
-        UnmapViewOfFile(fileData);
-        CloseHandle(hMapping);
-        CloseHandle(hFile);
-        return 1;
-    }
-
-    // Allouer buffers
-    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-    if (!decrypted || !decompressed) {
-        UnmapViewOfFile(fileData);
-        CloseHandle(hMapping);
-        CloseHandle(hFile);
-        return 1;
-    }
-
-    // Copier et déchiffrer
-    memcpy(decrypted, packedData, packedSec->packed_size);
-    decryptXOR(decrypted, packedSec->packed_size, packedSec->key);
-
-    // Décompresser
-    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);
-
-    // Créer fichier temporaire
-    char tempPath[MAX_PATH];
-    char tempFile[MAX_PATH];
-    GetTempPathA(MAX_PATH, tempPath);
-    GetTempFileNameA(tempPath, "tmp", 0, tempFile);
-
-    // Changer l'extension en .exe
-    char* ext = strrchr(tempFile, '.');
-    if (ext) strcpy(ext, ".exe");
-
-    // Écrire le fichier décompressé
-    HANDLE hTempFile = CreateFileA(tempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);
-    if (hTempFile != INVALID_HANDLE_VALUE) {
-        DWORD written;
-        WriteFile(hTempFile, decompressed, decompSize, &written, NULL);
-        CloseHandle(hTempFile);
-
-        // Nettoyer les ressources
-        VirtualFree(decrypted, 0, MEM_RELEASE);
-        VirtualFree(decompressed, 0, MEM_RELEASE);
-        UnmapViewOfFile(fileData);
-        CloseHandle(hMapping);
-        CloseHandle(hFile);
-
-        // Exécuter le fichier temporaire
-        STARTUPINFOA si = {0};
-        PROCESS_INFORMATION pi = {0};
-        si.cb = sizeof(si);
-
-        if (CreateProcessA(tempFile, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-            WaitForSingleObject(pi.hProcess, INFINITE);
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-        }
-
-        // Supprimer le fichier temporaire
-        DeleteFileA(tempFile);
-    }
-
-    return 0;
-}
-)";
 
 class SimplePacker {
 private:
@@ -183,28 +172,17 @@ private:
     std::string inputPath;
     std::string outputPath;
     DWORD fileSize;
-    bool lockFlag;
-    uint32_t lockKey[4];
-    uint32_t lockHash;
 
     // ==================== COMPILATION DU STUB ====================
     bool compileStub(const std::string& stubExePath) {
-        // Créer un fichier source temporaire
         char tempPath[MAX_PATH];
         char stubSourcePath[MAX_PATH];
         GetTempPathA(MAX_PATH, tempPath);
         sprintf(stubSourcePath, "%s\\stub_source.c", tempPath);
 
-        // Écrire le code source
-        FILE* f = fopen(stubSourcePath, "w");
-        if (!f) {
-            fprintf(stderr, "[-] Could not create stub source file\n");
-            return false;
-        }
-        fprintf(f, "%s", stubSourceCode);
-        fclose(f);
+        printf("[*] Generating stub source code...\n");
+        generateStubSource(stubSourcePath);
 
-        // Compiler avec GCC
         char compileCmd[1024];
         sprintf(compileCmd, "gcc -O2 -s -mwindows -o \"%s\" \"%s\" 2>nul",
                 stubExePath.c_str(), stubSourcePath);
@@ -212,12 +190,11 @@ private:
         printf("[*] Compiling unpacker stub...\n");
         int result = system(compileCmd);
 
-        // Nettoyer
         DeleteFileA(stubSourcePath);
 
         if (result != 0) {
-            fprintf(stderr, "[-] Failed to compile stub. Make sure GCC is installed.\n");
-            fprintf(stderr, "[-] You can install MinGW or use: winget install -e --id GnuWin32.Make\n");
+            fprintf(stderr, "[-] Failed to compile stub. Make sure GCC is in PATH.\n");
+            fprintf(stderr, "[-] Try: set PATH=%%PATH%%;C:\\MinGW\\bin\n");
             return false;
         }
 
@@ -270,35 +247,15 @@ private:
         }
     }
 
-    // ==================== HASH DJB2 ====================
-    static uint32_t hashDJB2(const BYTE* buf, size_t size) {
-        uint32_t hash = 5381;
-        for (size_t i = 0; i < size; i++) {
-            hash = ((hash << 5) + hash) + buf[i];
-        }
-        return hash;
-    }
-
-    static uint32_t hashString(const std::string& str) {
-        return hashDJB2(reinterpret_cast<const BYTE*>(str.c_str()), str.length());
-    }
-
     static DWORD alignValue(DWORD value, DWORD alignment) {
         DWORD r = value % alignment;
         return r ? value + (alignment - r) : value;
     }
 
-    static std::string intToString(int value) {
-        char buffer[32];
-        sprintf(buffer, "%d", value);
-        return std::string(buffer);
-    }
-
-    // ==================== INJECTION DES DONNÉES DANS LE STUB ====================
+    // ==================== INJECTION DES DONNÉES ====================
     bool injectPackedData(const std::string& stubExePath,
                           const std::vector<BYTE>& packedData,
                           const std::string& outputPath) {
-        // Lire le stub compilé
         std::ifstream stubFile(stubExePath.c_str(), std::ios::binary | std::ios::ate);
         if (!stubFile) {
             fprintf(stderr, "[-] Could not open stub file\n");
@@ -312,15 +269,12 @@ private:
         stubFile.read(reinterpret_cast<char*>(&stubData[0]), stubSize);
         stubFile.close();
 
-        // Analyser le PE du stub
         IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(&stubData[0]);
         IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(&stubData[0] + dosHeader->e_lfanew);
         IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);
 
-        // Trouver la dernière section
         IMAGE_SECTION_HEADER* lastSection = &sections[ntHeaders->FileHeader.NumberOfSections - 1];
 
-        // Créer la nouvelle section .packed
         IMAGE_SECTION_HEADER newSection;
         memset(&newSection, 0, sizeof(newSection));
         memcpy(newSection.Name, ".packed", 7);
@@ -333,43 +287,34 @@ private:
                                                 ntHeaders->OptionalHeader.FileAlignment);
         newSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
 
-        // Mettre à jour le nombre de sections
         ntHeaders->FileHeader.NumberOfSections++;
-
-        // Mettre à jour SizeOfImage
         ntHeaders->OptionalHeader.SizeOfImage = alignValue(newSection.VirtualAddress + newSection.Misc.VirtualSize,
                                                            ntHeaders->OptionalHeader.SectionAlignment);
 
-        // Créer le fichier final
         std::vector<BYTE> finalData;
+        size_t sectionsOffset = dosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + ntHeaders->FileHeader.SizeOfOptionalHeader;
 
-        // Copier jusqu'à la table des sections
-        size_t sectionsOffset = dosHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS);
         finalData.insert(finalData.end(), stubData.begin(),
                         stubData.begin() + sectionsOffset + (ntHeaders->FileHeader.NumberOfSections - 1) * sizeof(IMAGE_SECTION_HEADER));
 
-        // Ajouter la nouvelle section header
         finalData.insert(finalData.end(), reinterpret_cast<BYTE*>(&newSection),
                         reinterpret_cast<BYTE*>(&newSection) + sizeof(newSection));
 
-        // Copier le reste jusqu'aux données
         size_t afterSections = sectionsOffset + ntHeaders->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
-        finalData.insert(finalData.end(), stubData.begin() + afterSections, stubData.end());
+        if (afterSections < stubData.size()) {
+            finalData.insert(finalData.end(), stubData.begin() + afterSections, stubData.end());
+        }
 
-        // Padding jusqu'à la nouvelle section
         while (finalData.size() < newSection.PointerToRawData) {
             finalData.push_back(0);
         }
 
-        // Ajouter les données packed
         finalData.insert(finalData.end(), packedData.begin(), packedData.end());
 
-        // Padding final
         while (finalData.size() % ntHeaders->OptionalHeader.FileAlignment != 0) {
             finalData.push_back(0);
         }
 
-        // Écrire le fichier final
         std::ofstream outFile(outputPath.c_str(), std::ios::binary);
         if (!outFile) {
             fprintf(stderr, "[-] Could not create output file\n");
@@ -422,9 +367,7 @@ private:
     }
 
 public:
-    SimplePacker() : fileSize(0), lockFlag(false), lockHash(0) {
-        memset(lockKey, 0, sizeof(lockKey));
-    }
+    SimplePacker() : fileSize(0) {}
 
     bool parseArguments(int argc, char* argv[]) {
         if (argc < 2) {
@@ -469,25 +412,22 @@ public:
 
         printf("[*] Original size: %lu bytes\n", (unsigned long)fileSize);
 
-        // Compression
         printf("[*] Compressing with RLE...\n");
         std::vector<BYTE> compressed = compressRLE(inputFile);
         printf("[+] Compressed: %lu bytes (%.1f%%)\n",
                (unsigned long)compressed.size(),
                (100.0 * compressed.size() / fileSize));
 
-        // Clé de chiffrement
         uint32_t defaultKey[4] = { 0x12345678, 0x9ABCDEF0, 0xFEDCBA98, 0x87654321 };
 
         printf("[*] Encrypting payload...\n");
         encryptXOR(compressed, defaultKey);
         printf("[+] Encryption complete\n");
 
-        // Création de la section packed
         std::vector<BYTE> packedSectionData(sizeof(PackedSection) + compressed.size());
         PackedSection* section = reinterpret_cast<PackedSection*>(&packedSectionData[0]);
 
-        section->magic = 0x4B435041; // "PACK"
+        section->magic = 0x4B435041;
         section->unpacked_size = fileSize;
         section->packed_size = static_cast<DWORD>(compressed.size());
         memcpy(section->key, defaultKey, sizeof(defaultKey));
@@ -495,7 +435,6 @@ public:
         memcpy(&packedSectionData[0] + sizeof(PackedSection),
                &compressed[0], compressed.size());
 
-        // Compiler le stub
         char tempPath[MAX_PATH];
         char stubExePath[MAX_PATH];
         GetTempPathA(MAX_PATH, tempPath);
@@ -505,27 +444,21 @@ public:
             return false;
         }
 
-        // Injecter les données dans le stub
         printf("[*] Injecting packed data into stub...\n");
         if (!injectPackedData(stubExePath, packedSectionData, outputPath)) {
             DeleteFileA(stubExePath);
             return false;
         }
 
-        // Nettoyer le stub temporaire
         DeleteFileA(stubExePath);
 
         printf("\n[+] ========================================\n");
         printf("[+] Successfully packed!\n");
         printf("[+] Original size:  %lu bytes\n", (unsigned long)fileSize);
-        printf("[+] Packed size:    Unknown (check file)\n");
         printf("[+] Compression:    %.1f%%\n", (100.0 * compressed.size() / fileSize));
         printf("[+] Output file:    %s\n", outputPath.c_str());
         printf("[+] ========================================\n\n");
-        printf("[i] The packed exe will:\n");
-        printf("    1. Extract to %%TEMP%%\\tmpXXXX.exe\n");
-        printf("    2. Execute the original program\n");
-        printf("    3. Delete the temp file after execution\n\n");
+        printf("[i] The packed exe will extract and run the original.\n\n");
 
         return true;
     }

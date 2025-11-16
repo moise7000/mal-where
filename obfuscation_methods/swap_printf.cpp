@@ -111,7 +111,3 @@ extern "C" void syslog(int priority, const char *format, ...) {
     std::free(buf);
     (void)priority; // éviter warning param unused
 }
-
-// ============================================================================
-//  FIN DU FICHIER
-// ============================================================================

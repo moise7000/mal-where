@@ -248,10 +248,11 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        IMAGE_DATA_DIRECTORY relocDir = newNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];\n");
     fprintf(f, "        if (relocDir.Size > 0) {\n");
     fprintf(f, "            IMAGE_BASE_RELOCATION* reloc = (IMAGE_BASE_RELOCATION*)(decompressed + relocDir.VirtualAddress);\n");
+    fprintf(f, "            DWORD j;\n");
     fprintf(f, "            while (reloc->VirtualAddress > 0) {\n");
     fprintf(f, "                DWORD numEntries = (reloc->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);\n");
     fprintf(f, "                WORD* relocData = (WORD*)((DWORD)reloc + sizeof(IMAGE_BASE_RELOCATION));\n");
-    fprintf(f, "                for (DWORD j = 0; j < numEntries; j++) {\n");
+    fprintf(f, "                for (j = 0; j < numEntries; j++) {\n");
     fprintf(f, "                    if ((relocData[j] >> 12) == IMAGE_REL_BASED_HIGHLOW) {\n");
     fprintf(f, "                        DWORD offset = reloc->VirtualAddress + (relocData[j] & 0xFFF);\n");
     fprintf(f, "                        DWORD relocAddr;\n");
@@ -318,7 +319,7 @@ private:
         CloseHandle(hTest);
 
         char compileCmd[1024];
-        sprintf(compileCmd, "gcc -O2 -s -o \"%s\" \"%s\" 2>\"%s\"",
+        sprintf(compileCmd, "gcc -std=c99 -O2 -s -o \"%s\" \"%s\" 2>\"%s\"",
                 stubExePath.c_str(), stubSourcePath, errorLogPath);
 
         printf("[*] Compiling unpacker stub...\n");

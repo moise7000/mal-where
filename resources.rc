@@ -1,0 +1,5 @@
+#include "resources.h"
+
+IDR_README_MD RCDATA "README.md"
+IDR_DOCUMENTATION_MD RCDATA "Documentation.md"
+IDR_FILE_TXT RCDATA "file.txt"

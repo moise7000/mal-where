@@ -138,6 +138,50 @@ std::string Cipher::decrypt(const std::string& encrypted) const {
     return std::string(decrypted.begin(), decrypted.end());
 }
 
+//Chiffre un entier
+int Cipher::encrypt(const int i) const {
+    // Convertir l'entier en bytes (4 bytes pour un int)
+    std::vector<unsigned char> data(4);
+    data[0] = (i >> 24) & 0xFF;
+    data[1] = (i >> 16) & 0xFF;
+    data[2] = (i >> 8) & 0xFF;
+    data[3] = i & 0xFF;
+
+    // Chiffrer les bytes
+    std::vector<unsigned char> encrypted = encryptBytes(data);
+
+    // Reconvertir en int
+    int result = 0;
+    result |= (static_cast<int>(encrypted[0]) << 24);
+    result |= (static_cast<int>(encrypted[1]) << 16);
+    result |= (static_cast<int>(encrypted[2]) << 8);
+    result |= static_cast<int>(encrypted[3]);
+
+    return result;
+}
+
+// Dechiffre un entier
+int Cipher::decrypt(const int i) const {
+    // Convertir l'entier en bytes (4 bytes pour un int)
+    std::vector<unsigned char> data(4);
+    data[0] = (i >> 24) & 0xFF;
+    data[1] = (i >> 16) & 0xFF;
+    data[2] = (i >> 8) & 0xFF;
+    data[3] = i & 0xFF;
+
+    // Déchiffrer les bytes
+    std::vector<unsigned char> decrypted = decryptBytes(data);
+
+    // Reconvertir en int
+    int result = 0;
+    result |= (static_cast<int>(decrypted[0]) << 24);
+    result |= (static_cast<int>(decrypted[1]) << 16);
+    result |= (static_cast<int>(decrypted[2]) << 8);
+    result |= static_cast<int>(decrypted[3]);
+
+    return result;
+}
+
 // Chiffre un tableau de bytes
 std::vector<unsigned char> Cipher::encryptBytes(const std::vector<unsigned char>& data) const {
     if (data.empty()) {

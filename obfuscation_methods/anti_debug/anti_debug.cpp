@@ -119,19 +119,32 @@ static bool is_debugger_present_ntglobalflag() {
 // ========== Timing attacks ==========
 
 // RDTSC timing check
-static bool detect_timing_rdtsc() {
-    // Use __rdtsc intrinsic (works on both MSVC and GCC/MinGW)
-    unsigned long long start = __rdtsc();
-    
-    // Some dummy operation
+    // RDTSC timing check
+    static bool detect_timing_rdtsc() {
+    unsigned long long start, end;
+
+#ifdef __GNUC__
+    // GCC inline assembly for RDTSC
+    unsigned int lo, hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    start = ((unsigned long long)hi << 32) | lo;
+
+    // Dummy operation
     volatile int x = 0;
     for (int i = 0; i < 100; i++) x++;
-    
-    unsigned long long end = __rdtsc();
-    
-    // If difference is too large, might be stepping through debugger
+
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    end = ((unsigned long long)hi << 32) | lo;
+#else
+    // MSVC intrinsic
+    start = __rdtsc();
+    volatile int x = 0;
+    for (int i = 0; i < 100; i++) x++;
+    end = __rdtsc();
+#endif
+
     unsigned long long diff = end - start;
-    return diff > 10000; // Threshold
+    return diff > 10000;
 }
 
 // GetTickCount timing check
@@ -314,5 +327,5 @@ bool is_debugger_present_ptrace() {
 
 #else
 // Non-Windows platform
-#error "This version requires Windows. Use the Linux version for Linux systems."
+#error "This version requires Windows."
 #endif // _WIN32

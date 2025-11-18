@@ -35,7 +35,7 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "#include <string.h>\n\n");
 
     fprintf(f, "/* Uncomment for debugging */\n");
-    fprintf(f, " #define DEBUG_MODE \n\n");
+    fprintf(f, "/* #define DEBUG_MODE */\n\n");
 
     fprintf(f, "#ifdef DEBUG_MODE\n");
     fprintf(f, "#define DEBUG_PRINT(msg) MessageBoxA(NULL, msg, \"Debug\", MB_OK)\n");
@@ -61,11 +61,8 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {\n");
     fprintf(f, "    unsigned char* keyBytes = (unsigned char*)key;\n");
     fprintf(f, "    DWORD i;\n");
-    fprintf(f, "    volatile int junk = 0;\n");
     fprintf(f, "    for (i = 0; i < size; i++) {\n");
-    fprintf(f, "        if (junk > 1000000) break;\n");
     fprintf(f, "        data[i] ^= keyBytes[i %% 16];\n");
-    fprintf(f, "        junk++;\n");
     fprintf(f, "    }\n");
     fprintf(f, "}\n\n");
 
@@ -73,13 +70,12 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    DWORD writePos = 0;\n");
     fprintf(f, "    DWORD readPos = 0;\n");
     fprintf(f, "    int i;\n");
-    fprintf(f, "    volatile DWORD dummy = GetTickCount();\n");
     fprintf(f, "    while (readPos < inputSize && writePos < outputSize) {\n");
-    fprintf(f, "        if (dummy == 0xFFFFFFFF) return 0;\n");
     fprintf(f, "        unsigned char current = input[readPos];\n");
     fprintf(f, "        if (current == 0xFF && readPos + 2 < inputSize) {\n");
     fprintf(f, "            unsigned char count = input[readPos + 1];\n");
     fprintf(f, "            if (count == 0) {\n");
+    fprintf(f, "                if (writePos >= outputSize) break;\n");
     fprintf(f, "                output[writePos++] = 0xFF;\n");
     fprintf(f, "                readPos += 2;\n");
     fprintf(f, "            } else {\n");
@@ -90,6 +86,7 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "                readPos += 3;\n");
     fprintf(f, "            }\n");
     fprintf(f, "        } else {\n");
+    fprintf(f, "            if (writePos >= outputSize) break;\n");
     fprintf(f, "            output[writePos++] = current;\n");
     fprintf(f, "            readPos++;\n");
     fprintf(f, "        }\n");
@@ -133,7 +130,10 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "        if (sections[i].SizeOfRawData > sizeof(struct PackedSection)) {\n");
     fprintf(f, "            struct PackedSection* testSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
     fprintf(f, "            if (testSec->magic == 0x%08lXUL) {\n", (unsigned long)magic);
-    fprintf(f, "                DEBUG_PRINT(\"Step 5: Found packed section\");\n");
+    fprintf(f, "                char debugMsg[512];\n");
+    fprintf(f, "                sprintf(debugMsg, \"Step 5: Found packed section\\nPacked size: %%lu bytes\\nUnpacked size: %%lu bytes\",\n");
+    fprintf(f, "                        testSec->packed_size, testSec->unpacked_size);\n");
+    fprintf(f, "                DEBUG_PRINT(debugMsg);\n");
     fprintf(f, "                packedSec = testSec;\n");
     fprintf(f, "                packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");
     fprintf(f, "                break;\n");
@@ -152,21 +152,69 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    DWORD tickDiff = GetTickCount() - antiDebug;\n");
     fprintf(f, "    if (tickDiff > 1000) return 1;\n\n");
 
-    fprintf(f, "    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n");
-    fprintf(f, "    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n\n");
-
-    fprintf(f, "    if (!decrypted || !decompressed) {\n");
+    fprintf(f, "    DEBUG_PRINT(\"Step 5.1: Allocating memory\");\n");
+    fprintf(f, "    if (packedSec->packed_size == 0 || packedSec->unpacked_size == 0) {\n");
+    fprintf(f, "        MessageBoxA(NULL, \"Invalid packed sizes!\", \"Error\", MB_OK | MB_ICONERROR);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
+    fprintf(f, "    if (packedSec->packed_size > 100000000 || packedSec->unpacked_size > 100000000) {\n");
+    fprintf(f, "        MessageBoxA(NULL, \"Packed sizes too large!\", \"Error\", MB_OK | MB_ICONERROR);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n");
+    fprintf(f, "    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n\n");
+
+    fprintf(f, "    if (!decrypted) {\n");
+    fprintf(f, "        MessageBoxA(NULL, \"Failed to allocate decrypted buffer!\", \"Error\", MB_OK | MB_ICONERROR);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    if (!decompressed) {\n");
+    fprintf(f, "        MessageBoxA(NULL, \"Failed to allocate decompressed buffer!\", \"Error\", MB_OK | MB_ICONERROR);\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n\n");
+
+    fprintf(f, "    DEBUG_PRINT(\"Step 5.2: Memory allocated\");\n");
+
+    fprintf(f, "    DEBUG_PRINT(\"Step 5.2: Memory allocated\");\n");
+    fprintf(f, "    \n");
+    fprintf(f, "    /* Verify we can read packed data */\n");
+    fprintf(f, "    DWORD fileSize = GetFileSize(hFile, NULL);\n");
+    fprintf(f, "    DWORD packedDataOffset = (DWORD)((unsigned char*)packedData - fileData);\n");
+    fprintf(f, "    if (packedDataOffset + packedSec->packed_size > fileSize) {\n");
+    fprintf(f, "        char errMsg[256];\n");
+    fprintf(f, "        sprintf(errMsg, \"Packed data exceeds file size!\\nOffset: %%lu\\nSize: %%lu\\nFile: %%lu\",\n");
+    fprintf(f, "                packedDataOffset, packedSec->packed_size, fileSize);\n");
+    fprintf(f, "        MessageBoxA(NULL, errMsg, \"Error\", MB_OK | MB_ICONERROR);\n");
+    fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
+    fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
+    fprintf(f, "        UnmapViewOfFile(fileData);\n");
+    fprintf(f, "        CloseHandle(hMapping);\n");
+    fprintf(f, "        CloseHandle(hFile);\n");
+    fprintf(f, "        return 1;\n");
+    fprintf(f, "    }\n");
+    fprintf(f, "    \n");
     fprintf(f, "    memcpy(decrypted, packedData, packedSec->packed_size);\n");
-    fprintf(f, "    DEBUG_PRINT(\"Step 6: Decrypting\");\n");
+    fprintf(f, "    DEBUG_PRINT(\"Step 5.3: Data copied\");\n");
     fprintf(f, "    decryptXOR(decrypted, packedSec->packed_size, packedSec->key);\n");
-    fprintf(f, "    DEBUG_PRINT(\"Step 7: Decompressing\");\n");
-    fprintf(f, "    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);\n\n");
+    fprintf(f, "    DEBUG_PRINT(\"Step 6: Decryption complete\");\n");
+    fprintf(f, "    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);\n");
+    fprintf(f, "    DEBUG_PRINT(\"Step 7: Decompression complete\");\n\n");
 
     fprintf(f, "    if (decompSize != packedSec->unpacked_size) {\n");
     fprintf(f, "        char errorMsg[256];\n");

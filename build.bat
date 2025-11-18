@@ -225,8 +225,8 @@ exit /b %errorlevel%
 
 :compile_DEVIL
 echo Compiling %DEVIL%...
-%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp -lwinmm %CXXFLAGS%
-%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp -lwinmm  %RESOURCES_OBJ% %CXXFLAGS%
+%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp devil/zipbomb.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_devil_code.cpp -lwinmm %CXXFLAGS%
+%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp devil/zipbomb.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_devil_code.cpp -lwinmm %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_ANTI_DEBUG
@@ -326,6 +326,7 @@ if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
 if exist %SHA% del %SHA%
 if exist %CALL% del %CALL%
+if exist %DEVIL% del %DEVIL%
 if exist %ANTI_DEBUG% del %ANTI_DEBUG%
 if exist %CUSTOM% del %CUSTOM%
 

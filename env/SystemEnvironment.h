@@ -13,6 +13,11 @@ namespace systemEnvironment {
 
     std::string getTempPath();
 
+    std::string getUsername();
+
+    std::string getName();
+
+
 
 }
 

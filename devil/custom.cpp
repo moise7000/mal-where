@@ -4,7 +4,8 @@
 //
 
 #include "custom.h"
-#include "../obfuscation_methods/get_username.h"
+
+#include "../env/SystemEnvironment.h"
 #include "../packer/Cipher.h"
 #ifdef _WIN32
 #include "../obfuscation_methods/anti_debug/anti_debug.h"
@@ -63,7 +64,7 @@ void custom(const std::string& str) {
         std::cout << str << std::endl;
     } else {
         // Get the username as key
-        std::string key = getUsername();
+        std::string key = systemEnvironment::getUsername();
         
         if (key == SALT) {
             // Slow down execution with compose_n_times (10 iterations of factorial)

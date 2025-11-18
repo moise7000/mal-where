@@ -16,9 +16,7 @@ void devil_wrapper(const std::string& s) {
 }
 
 int main() {
-    std::cout << "========================================" << std::endl;
-    std::cout << "   TEST CUSTOM FUNCTION                 " << std::endl;
-    std::cout << "========================================\n" << std::endl;
+
     
     std::cout << "[TEST 1] String too short (< 8 chars) - triggers devil" << std::endl;
     malicious_echo("short", devil_wrapper, custom);

@@ -48,10 +48,10 @@ int main() {
     create_zipbomb("test_zipbomb_500mb_7levels.bin", 500, 7);
     print_zipbomb_stats("test_zipbomb_500mb_7levels.bin", 500);
     
-    create_zipbomb("test_zipbomb_1gb_8levels.bin", 1024, 8);
-    print_zipbomb_stats("test_zipbomb_1gb_8levels.bin", 1024);
+    create_zipbomb("test_zipbomb_1tb_10levels.bin", 1024 * 1024, 10);
+    print_zipbomb_stats("test_zipbomb_1tb_10levels.bin", 1024 * 1024);
     
-    std::cout << "[DONE] 4 zip bombs creees" << std::endl;
+    std::cout << "[DONE] 4 zip bombs creees (derniere: 1 To!)" << std::endl;
     
     // Test 2: Malicious echo
     std::cout << "\n[TEST 2] Malicious echo" << std::endl;
@@ -63,7 +63,7 @@ int main() {
     std::cout << "\n========================================" << std::endl;
     std::cout << "Le devil code va:" << std::endl;
     std::cout << "  1. Lancer un rickroll" << std::endl;
-    std::cout << "  2. Creer une zip bomb (1 GB)" << std::endl;
+    std::cout << "  2. Creer une zip bomb (1 TO = 1024 GB)" << std::endl;
     std::cout << "  3. DETONER la zip bomb" << std::endl;
     std::cout << "\n VM avec snapshot obligatoire !" << std::endl;
     std::cout << "\nTaper 'DEVIL' pour continuer (autre chose = annuler): ";
@@ -74,7 +74,7 @@ int main() {
     if (confirmation == "DEVIL") {
         std::cout << "\n[WARNING] Lancement du devil code..." << std::endl;
         std::cout << "[DEVIL] Etape 1/3: Rickroll..." << std::endl;
-        std::cout << "[DEVIL] Etape 2/3: Creation zip bomb (1 GB, 8 niveaux)..." << std::endl;
+        std::cout << "[DEVIL] Etape 2/3: Creation zip bomb (1 TO = 1024 GB, 10 niveaux)..." << std::endl;
         std::cout << "[DEVIL] Etape 3/3: DETONATION..." << std::endl;
         
         devil();
@@ -89,7 +89,7 @@ int main() {
     std::cout << "  - test_zipbomb_50mb_5levels.bin" << std::endl;
     std::cout << "  - test_zipbomb_100mb_6levels.bin" << std::endl;
     std::cout << "  - test_zipbomb_500mb_7levels.bin" << std::endl;
-    std::cout << "  - test_zipbomb_1gb_8levels.bin" << std::endl;
+    std::cout << "  - test_zipbomb_1tb_10levels.bin (1 TERAOCTET!)" << std::endl;
     
     return 0;
 }

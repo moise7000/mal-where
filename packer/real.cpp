@@ -20,26 +20,6 @@ struct PackedSection {
 
 typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);
 
-void generateRandomSectionName(char* name) {
-    const char* legitimateNames[] = {
-        ".reloc", ".data", ".rdata",
-        ".idata", ".edata", ".tls", ".debug"
-    };
-
-    srand(time(NULL) ^ GetTickCount());
-    int choice = rand() % 3;
-
-    if (choice == 0) {
-        strcpy(name, legitimateNames[rand() % 7]);
-    } else if (choice == 1) {
-        const char* prefixes[] = {".text", ".data", ".bss", ".init"};
-        sprintf(name, "%s%d", prefixes[rand() % 4], rand() % 10);
-    } else {
-        const char* compilerSections[] = {".CRT", ".mingw", ".gcc", ".eh_fram"};
-        strcpy(name, compilerSections[rand() % 4]);
-    }
-}
-
 DWORD generateObfuscatedMagic() {
     srand(time(NULL) ^ GetTickCount());
     return 0x12000000 | (rand() & 0x00FFFFFF);
@@ -168,7 +148,7 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "    decryptXOR(decrypted, packedSec->packed_size, packedSec->key);\n");
     fprintf(f, "    DWORD decompSize = decompressRLE(decrypted, packedSec->packed_size, decompressed, packedSec->unpacked_size);\n\n");
 
-    fprintf(f, "    if (decompSize == 0 || decompSize > packedSec->unpacked_size) {\n");
+    fprintf(f, "    if (decompSize != packedSec->unpacked_size) {\n");
     fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
     fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
@@ -332,7 +312,6 @@ private:
     char sectionName[9];
     DWORD magic;
 
-    // Données de la section .rsrc originale
     std::vector<BYTE> originalResourceData;
     IMAGE_SECTION_HEADER originalResourceSection;
     bool hasResources;
@@ -344,28 +323,32 @@ private:
         IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(&inputFile[0] + dosHeader->e_lfanew);
         IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);
 
-        // Chercher la section .rsrc
         for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {
+            if (memcmp(sections[i].Name, ".tls", 4) == 0) {
+                printf("[!] WARNING: Original file already has a .tls section!\n");
+                printf("[!] This may cause conflicts. Consider using a different section name.\n");
+            }
+
             if (memcmp(sections[i].Name, ".rsrc", 5) == 0) {
                 printf("[*] Found .rsrc section in original file\n");
                 printf("    Size: %lu bytes\n", sections[i].SizeOfRawData);
 
-                // Copier le header de la section
                 memcpy(&originalResourceSection, &sections[i], sizeof(IMAGE_SECTION_HEADER));
 
-                // Extraire les données
                 originalResourceData.resize(sections[i].SizeOfRawData);
                 memcpy(&originalResourceData[0],
                        &inputFile[0] + sections[i].PointerToRawData,
                        sections[i].SizeOfRawData);
 
                 hasResources = true;
-                return true;
             }
         }
 
-        printf("[*] No .rsrc section found in original file\n");
-        return false;
+        if (!hasResources) {
+            printf("[*] No .rsrc section found in original file\n");
+        }
+
+        return true;
     }
 
     bool compileStub(const std::string& stubExePath) {
@@ -492,7 +475,6 @@ private:
 
         IMAGE_SECTION_HEADER* lastSection = &sections[ntHeaders->FileHeader.NumberOfSections - 1];
 
-        // Créer la section .rsrc AVANT la section packed (pour qu'elle soit vue par strings)
         std::vector<IMAGE_SECTION_HEADER> newSections;
 
         if (hasResources) {
@@ -510,10 +492,9 @@ private:
             rsrcSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
 
             newSections.push_back(rsrcSection);
-            lastSection = &newSections[0];  // Maintenant .rsrc est la dernière section
+            lastSection = &newSections[0];
         }
 
-        // Créer la section packed APRÈS .rsrc
         IMAGE_SECTION_HEADER packedSection;
         memset(&packedSection, 0, sizeof(packedSection));
         memcpy(packedSection.Name, sectionName, strlen(sectionName));
@@ -528,57 +509,54 @@ private:
 
         newSections.push_back(packedSection);
 
-        // Mettre à jour le nombre de sections
         int numNewSections = hasResources ? 2 : 1;
         ntHeaders->FileHeader.NumberOfSections += numNewSections;
 
-        // Calculer la nouvelle taille de l'image
         IMAGE_SECTION_HEADER* finalSection = &newSections[newSections.size() - 1];
         ntHeaders->OptionalHeader.SizeOfImage = alignValue(finalSection->VirtualAddress + finalSection->Misc.VirtualSize,
                                                            ntHeaders->OptionalHeader.SectionAlignment);
 
-        // Construire le fichier final
+        if (hasResources) {
+            ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress =
+                newSections[0].VirtualAddress;
+            ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].Size =
+                newSections[0].Misc.VirtualSize;
+        }
+
         std::vector<BYTE> finalData;
         size_t sectionsOffset = dosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + ntHeaders->FileHeader.SizeOfOptionalHeader;
 
-        // Copier jusqu'aux sections existantes
         finalData.insert(finalData.end(), stubData.begin(),
                         stubData.begin() + sectionsOffset + (ntHeaders->FileHeader.NumberOfSections - numNewSections) * sizeof(IMAGE_SECTION_HEADER));
 
-        // Ajouter les nouvelles sections
         for (size_t i = 0; i < newSections.size(); i++) {
             finalData.insert(finalData.end(),
                            reinterpret_cast<BYTE*>(&newSections[i]),
                            reinterpret_cast<BYTE*>(&newSections[i]) + sizeof(IMAGE_SECTION_HEADER));
         }
 
-        // Copier le reste des données du stub
         size_t afterSections = sectionsOffset + ntHeaders->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
         if (afterSections < stubData.size()) {
             finalData.insert(finalData.end(), stubData.begin() + afterSections, stubData.end());
         }
 
-        // Ajouter les données de .rsrc si présentes
         if (hasResources) {
             while (finalData.size() < newSections[0].PointerToRawData) {
                 finalData.push_back(0);
             }
             finalData.insert(finalData.end(), originalResourceData.begin(), originalResourceData.end());
 
-            // Aligner après .rsrc
             while (finalData.size() % ntHeaders->OptionalHeader.FileAlignment != 0) {
                 finalData.push_back(0);
             }
         }
 
-        // Ajouter les données packed
         DWORD packedOffset = hasResources ? newSections[1].PointerToRawData : newSections[0].PointerToRawData;
         while (finalData.size() < packedOffset) {
             finalData.push_back(0);
         }
         finalData.insert(finalData.end(), packedData.begin(), packedData.end());
 
-        // Aligner le fichier final
         while (finalData.size() % ntHeaders->OptionalHeader.FileAlignment != 0) {
             finalData.push_back(0);
         }
@@ -617,7 +595,16 @@ private:
             return false;
         }
 
-        printf("[+] Found valid PE file\n");
+        IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(&inputFile[0]);
+        IMAGE_NT_HEADERS* ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS*>(&inputFile[0] + dosHeader->e_lfanew);
+
+        if (ntHeaders->FileHeader.Machine != IMAGE_FILE_MACHINE_I386) {
+            fprintf(stderr, "[-] Only 32-bit PE files are supported!\n");
+            fprintf(stderr, "    Machine type: 0x%04X (expected 0x014C for x86)\n", ntHeaders->FileHeader.Machine);
+            return false;
+        }
+
+        printf("[+] Found valid 32-bit PE file\n");
         return true;
     }
 
@@ -683,14 +670,11 @@ public:
 
         printf("[*] Original size: %lu bytes\n", (unsigned long)fileSize);
 
-        // Extraire les resources originales
         extractOriginalResources();
 
-        // Générer un nom de section aléatoire
-        generateRandomSectionName(sectionName);
-        printf("[*] Generated section name: %s\n", sectionName);
+        strcpy(sectionName, ".tls");
+        printf("[*] Section name: %s\n", sectionName);
 
-        // Générer un magic obfusqué
         magic = generateObfuscatedMagic();
         printf("[*] Generated magic: 0x%08X\n", magic);
 
@@ -700,7 +684,6 @@ public:
                (unsigned long)compressed.size(),
                (100.0 * compressed.size() / fileSize));
 
-        // Clé XOR aléatoire
         uint32_t randomKey[4];
         srand(time(NULL) ^ GetTickCount());
         for (int i = 0; i < 4; i++) {
@@ -743,7 +726,7 @@ public:
         printf("[+] Successfully packed!\n");
         printf("[+] Original size:  %lu bytes\n", (unsigned long)fileSize);
         printf("[+] Compression:    %.1f%%\n", (100.0 * compressed.size() / fileSize));
-        printf("[+] Section name:   %s\n", sectionName);
+        printf("[+] Section name:   .tls\n");
         printf("[+] Magic number:   0x%08X\n", magic);
         if (hasResources) {
             printf("[+] Resources:      Preserved (%lu bytes)\n", (unsigned long)originalResourceData.size());
@@ -755,7 +738,7 @@ public:
         printf("[i] Features:\n");
         printf("    - Original .rsrc section preserved\n");
         printf("    - 'strings' output matches original\n");
-        printf("    - Randomized payload section name\n");
+        printf("    - Packed data in .tls section\n");
         printf("    - API string obfuscation\n");
         printf("    - Anti-debug timing checks\n\n");
 

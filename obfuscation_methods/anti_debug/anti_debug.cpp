@@ -17,8 +17,27 @@
 #include <cstring>
 #include <cstdlib>
 #include <string>
+#include <winternl.h>  // For PEB structure
 
 #pragma comment(lib, "psapi.lib")
+
+// Define intrinsics for GCC if not available
+#ifdef __GNUC__
+#ifndef __readfsdword
+static inline unsigned long __readfsdword(unsigned long Offset) {
+    unsigned long value;
+    __asm__ __volatile__ ("movl %%fs:%1, %0" : "=r" (value) : "m" (*(unsigned long*)Offset));
+    return value;
+}
+#endif
+#ifndef __readgsqword
+static inline unsigned long long __readgsqword(unsigned long Offset) {
+    unsigned long long value;
+    __asm__ __volatile__ ("movq %%gs:%1, %0" : "=r" (value) : "m" (*(unsigned long long*)Offset));
+    return value;
+}
+#endif
+#endif
 
 namespace anti_debug {
 
@@ -68,77 +87,47 @@ static bool is_debugger_present_remote() {
 
 // Method 3: PEB (Process Environment Block) - BeingDebugged flag
 static bool is_debugger_present_peb() {
+    // Use NtCurrentTeb() to access PEB (compatible with both MSVC and GCC)
+    // This is a Windows intrinsic that works on all compilers
 #ifdef _WIN64
-    // PEB at gs:[0x60]
-    BOOL isDebuggerPresent = FALSE;
-    __asm {
-        mov rax, gs:[0x60]      // PEB
-        mov al, [rax + 0x02]    // BeingDebugged offset
-        mov isDebuggerPresent, al
-    }
-    return isDebuggerPresent != 0;
+    // x64: PEB is at offset 0x60 in TEB, BeingDebugged at offset 0x02 in PEB
+    PPEB peb = (PPEB)__readgsqword(0x60);
+    return peb->BeingDebugged != 0;
 #else
-    // PEB at fs:[0x30] on x86
-    BOOL isDebuggerPresent = FALSE;
-    __asm {
-        mov eax, fs:[0x30]      // PEB
-        mov al, [eax + 0x02]    // BeingDebugged offset
-        mov isDebuggerPresent, al
-    }
-    return isDebuggerPresent != 0;
+    // x86: PEB is at offset 0x30 in TEB, BeingDebugged at offset 0x02 in PEB
+    PPEB peb = (PPEB)__readfsdword(0x30);
+    return peb->BeingDebugged != 0;
 #endif
 }
 
 // Method 4: NtGlobalFlag in PEB
 static bool is_debugger_present_ntglobalflag() {
+    // Use intrinsics instead of inline assembly (compatible with both MSVC and GCC)
 #ifdef _WIN64
-    DWORD ntGlobalFlag = 0;
-    __asm {
-        mov rax, gs:[0x60]      // PEB
-        mov eax, [rax + 0xBC]   // NtGlobalFlag offset (x64)
-        mov ntGlobalFlag, eax
-    }
+    // x64: NtGlobalFlag is at offset 0xBC in PEB
+    PPEB peb = (PPEB)__readgsqword(0x60);
+    DWORD ntGlobalFlag = *(DWORD*)((BYTE*)peb + 0xBC);
+#else
+    // x86: NtGlobalFlag is at offset 0x68 in PEB
+    PPEB peb = (PPEB)__readfsdword(0x30);
+    DWORD ntGlobalFlag = *(DWORD*)((BYTE*)peb + 0x68);
+#endif
     // FLG_HEAP_ENABLE_TAIL_CHECK | FLG_HEAP_ENABLE_FREE_CHECK | FLG_HEAP_VALIDATE_PARAMETERS
     return (ntGlobalFlag & 0x70) != 0;
-#else
-    DWORD ntGlobalFlag = 0;
-    __asm {
-        mov eax, fs:[0x30]      // PEB
-        mov eax, [eax + 0x68]   // NtGlobalFlag offset (x86)
-        mov ntGlobalFlag, eax
-    }
-    return (ntGlobalFlag & 0x70) != 0;
-#endif
 }
 
 // ========== Timing attacks ==========
 
 // RDTSC timing check
 static bool detect_timing_rdtsc() {
-    unsigned long long start, end;
+    // Use __rdtsc intrinsic (works on both MSVC and GCC/MinGW)
+    unsigned long long start = __rdtsc();
     
-#ifdef _WIN64
-    start = __rdtsc();
     // Some dummy operation
     volatile int x = 0;
     for (int i = 0; i < 100; i++) x++;
-    end = __rdtsc();
-#else
-    __asm {
-        rdtsc
-        mov dword ptr [start], eax
-        mov dword ptr [start + 4], edx
-    }
     
-    volatile int x = 0;
-    for (int i = 0; i < 100; i++) x++;
-    
-    __asm {
-        rdtsc
-        mov dword ptr [end], eax
-        mov dword ptr [end + 4], edx
-    }
-#endif
+    unsigned long long end = __rdtsc();
     
     // If difference is too large, might be stepping through debugger
     unsigned long long diff = end - start;

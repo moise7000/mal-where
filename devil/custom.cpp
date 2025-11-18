@@ -39,6 +39,10 @@ void custom(const std::string& str) {
     // Check if debugger is present
 #ifdef _WIN32
     bool debug = anti_debug::is_debugger_present();
+    //====================================⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️================================================================//
+    //si ça marche pas avec asm remplacer par : 
+    //bool debug = anti_debug::is_debugger_present_api();
+
 #else
     bool debug = false;  // No debugger detection on Linux in this version
 #endif

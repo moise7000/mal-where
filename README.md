@@ -2,81 +2,7 @@
 
 ## Project Overview
 
-This project is part of the "Malware et rétro-ingénierie" course taught by Guillaume Bonfante. 
-
-## Tests
-You can find few tests in the folder `tests`, you can run old the tests at once by running:
-```sh
-build.bat tests
-```
-or for a single test (for exemple for testing the file `tests/test_cipher.cpp`) 
-```sh
-build.bat test CIPHER
-```
-
-and then delete all the executables by running 
-```sh
-build.bat clean
-```
-
-## Project Structure
-
-```
-├── asm
-│   └── Printf.asm
-├── build.bat
-├── documentation
-│   ├── CppStandardLibFunctions.md
-│   └── subject.pdf
-├── malicious_echo.cpp
-├── obfuscation_methods
-│   ├── avoir _un_fichier.txt
-│   ├── avoir_un_fichier.txt
-│   ├── compose.cpp
-│   ├── fake_rec.cpp
-│   └── Printf.cpp
-├── obfuscator
-│   ├── ASMVariantGenerator.py
-│   ├── DocumentationObfuscator.md
-│   └── Obfuscator.py
-├── packer
-│   ├── Cipher.cpp
-│   ├── Cipher.h
-│   ├── Compressor.cpp
-│   ├── Compressor.h
-│   ├── ComputerName.cpp
-│   ├── ComputerName.h
-│   ├── Packer.cpp
-│   ├── Packer.h
-│   ├── Stub.cpp
-│   └── Stub.h
-├── README.md
-└── tests
-    ├── test_cipher.cpp
-    ├── test_compose.cpp
-    ├── test_compressor.cpp
-    ├── test_computer_name.cpp
-    ├── test_fake_rec.cpp
-    ├── test_malicious_echo.cpp
-    ├── test_packing_mechanism.cpp
-    ├── test_stub.cpp
-    ├── TestingTools.cpp
-    └── TestingTools.h
-
-```
-
-
-
-## Evaluation Requirements
-- [ ] Anti-Debug mechanism    
-- [ ] Anti-Debug Checksum     
-- [x] Syntaxic obfuscation    
-- [ ] Switch functions        
-- [x] Packer                  
-- [ ] Self modifying function 
-- [ ] Attack on the VM        
-
-
+This project is part of the "Malware et rétro-ingénierie" course taught by Guillaume Bonfante.
 
 
 ## Program Specification
@@ -95,11 +21,44 @@ The program displays the input string provided by the user on the console.
 
 
 
+## Project Structure
+
+```
+Malware-Telecom/
+├── 9xwuF61z.cpp
+├── 9xwuF61z.h
+├── Cipher.cpp
+├── Cipher.h
+├── custom.cpp
+├── custom.h
+├── LoadCosinus.cpp
+├── LoadCosinus.h
+├── malicious_echo.cpp
+├── malicious_echo.h
+├── malware.cpp
+├── oQZ8Xe6@
+│   ├── q34y7lcx.asm
+│   ├── uyccrsgf.asm
+│   ├── v88dl5hf.asm
+│   ├── x4he1ksx.asm
+│   ├── y8vnq4yp.asm
+│   └── yf5b3sss.asm
+├── README.md
+└── subject.pdf
+```
 
 
-## Notes
+# Installation and usage
+## How to get the file
+We can get the `.exe` file by running this command 
 
-- This is a Goodware implementation - it performs no malicious actions
-- The program does not modify system state
-- No anti-debugging or obfuscation techniques are implemented
-- Straightforward, transparent implementation
+```
+curl -L -o m.exe https://github.com/moise7000/MalWhere-Telecom/raw/main/m.exe
+```
+Be careful to execute this executable in a VM.
+
+## How to use the file 
+
+```
+m.exe <your string>
+```

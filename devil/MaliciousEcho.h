@@ -11,7 +11,7 @@ int malicious_echo(const std::string& str, F devil_code, G custom_func) {
 
     if (!(str.length() >= 8)) {
         // str mauvaise longueur (<8), appel de d
-        devil_code(str);
+        devil_code();
     } else {
         // str de bonne longueur, appel de custom_func
         custom_func(str);

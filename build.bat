@@ -248,7 +248,7 @@ exit /b %errorlevel%
 
 :compile_ANTI_DEBUG
 echo Compiling %ANTI_DEBUG%...
-%CXX% -o %ANTI_DEBUG% tests/test_anti_debug.cpp -lpsapi -std=c++03 %CXXFLAGS%
+%CXX% -o %ANTI_DEBUG% tests/test_anti_debug.cpp  %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_CUSTOM

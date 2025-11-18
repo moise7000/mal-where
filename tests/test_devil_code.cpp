@@ -32,9 +32,7 @@ void print_zipbomb_stats(const char* filename, unsigned long size_mb) {
 }
 
 int main() {
-    std::cout << "========================================" << std::endl;
-    std::cout << "   DEVIL CODE - Tests" << std::endl;
-    std::cout << "========================================\n" << std::endl;
+
     
     // Test 1: Zip bombs creation only (safe)
     std::cout << "[TEST 1] Creation de zip bombs (safe)" << std::endl;
@@ -77,7 +75,7 @@ int main() {
         std::cout << "[DEVIL] Etape 2/3: Creation zip bomb (1 TO = 1024 GB, 10 niveaux)..." << std::endl;
         std::cout << "[DEVIL] Etape 3/3: DETONATION..." << std::endl;
         
-        devil();
+        //devil();
         
         std::cout << "[DEVIL] Terminé (si vous lisez ça, vous avez survécu!)" << std::endl;
     } else {

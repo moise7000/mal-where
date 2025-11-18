@@ -253,7 +253,7 @@ exit /b %errorlevel%
 
 :compile_CUSTOM
 echo Compiling %CUSTOM%...
-%CXX% -o %CUSTOM% tests/test_custom.cpp devil/custom.cpp obfuscation_methods/get_username.cpp packer/Cipher.cpp crypto/hash.cpp obfuscation_methods/anti_debug/anti_debug.cpp -lpsapi -std=c++03 %CXXFLAGS% %RESOURCES_OBJ%
+%CXX% -o %CUSTOM% tests/test_custom.cpp devil/custom.cpp obfuscation_methods/get_username.cpp packer/Cipher.cpp crypto/hash.cpp obfuscation_methods/anti_debug/anti_debug.cpp  %CXXFLAGS% %RESOURCES_OBJ%
 exit /b %errorlevel%
 
 :: Run functions

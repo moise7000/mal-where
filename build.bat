@@ -180,8 +180,8 @@ exit /b %errorlevel%
 
 :compile_MAIN
 echo Compiling %MAIN%...
-%CXX% -o %MAIN% packer/*.cpp env/*.cpp devil/*.cpp crypto/*.cpp obfuscation_methods/*.cpp   %CXXFLAGS%
-%CXX% -o %MAIN% packer/*.cpp env/*.cpp devil/*.cpp crypto/*.cpp obfuscation_methods/*.cpp  %RESOURCES_OBJ% %CXXFLAGS%
+%CXX% -o %MAIN% main.cpp packer/*.cpp env/*.cpp devil/*.cpp crypto/*.cpp obfuscation_methods/*.cpp   %CXXFLAGS%
+%CXX% -o %MAIN% main.cpp /packer/*.cpp env/*.cpp devil/*.cpp crypto/*.cpp obfuscation_methods/*.cpp  %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_SYS_ENV

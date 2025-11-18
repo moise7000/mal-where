@@ -23,6 +23,7 @@ set CALL=call_printf.exe
 set DEVIL=devil.exe
 set ANTI_DEBUG=anti_debug.exe
 set CUSTOM=custom.exe
+set MAIN=main.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -39,7 +40,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
-echo Available tests: CIPHER, SYS_ENV, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL, ANTI_DEBUG, CUSTOM
+echo Available tests: CIPHER, SYS_ENV, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL, ANTI_DEBUG, CUSTOM, MAIN
 echo.
 echo Commands:
 echo   build.bat                - Compile and run all tests
@@ -105,6 +106,9 @@ echo.
 call :compile_CIPHER
 if errorlevel 1 goto error
 
+call :compile_MAIN
+if errorlevel 1 goto error
+
 call :compile_SYS_ENV
 if errorlevel 1 goto error
 
@@ -158,6 +162,7 @@ call :run_CALL
 call :run_DEVIL
 call :run_ANTI_DEBUG
 call :run_CUSTOM
+call :run_MAIN
 
 
 echo.
@@ -171,6 +176,12 @@ goto end
 echo Compiling %CIPHER%...
 %CXX% -o %CIPHER% packer/Cipher.cpp  env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_cipher.cpp  %CXXFLAGS%
 %CXX% -o %CIPHER% packer/Cipher.cpp env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
+exit /b %errorlevel%
+
+:compile_MAIN
+echo Compiling %MAIN%...
+%CXX% -o %MAIN% packer/* env/* devil/* crypto/* obfuscation_methods/*    %CXXFLAGS%
+%CXX% -o %MAIN% packer/* env/* devil/* crypto/* obfuscation_methods/*  %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_SYS_ENV
@@ -243,6 +254,12 @@ exit /b %errorlevel%
 :run_CIPHER
 echo *** Test Cipher ***
 %CIPHER%
+echo.
+exit /b 0
+
+:run_MAIN
+echo *** Test Cipher ***
+%MAIN%
 echo.
 exit /b 0
 
@@ -329,6 +346,7 @@ if exist %CALL% del %CALL%
 if exist %DEVIL% del %DEVIL%
 if exist %ANTI_DEBUG% del %ANTI_DEBUG%
 if exist %CUSTOM% del %CUSTOM%
+if exist %MAIN% del %MAIN%
 
 if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.

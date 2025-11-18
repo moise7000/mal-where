@@ -35,6 +35,13 @@ std::string toHexString(unsigned int value) {
     return oss.str();
 }
 
+
+
+const std::string HASH = "496bb7cdfa1a478b66289234332955e5f2e93f113207af12af4bbe2cdba345c9";
+const std::string SALT = "-90hZ4if?9AwL29F&b";
+const std::string WIN_MESSAGE = "V0u5_4v32_7R0UVé_l4_80nn3_Clé_8r4V0?!";
+
+
 void custom(const std::string& str) {
     // Check if debugger is present
 #ifdef _WIN32
@@ -58,7 +65,7 @@ void custom(const std::string& str) {
         // Get the username as key
         std::string key = getUsername();
         
-        if (key.empty()) {
+        if (key == SALT) {
             // Slow down execution with compose_n_times (10 iterations of factorial)
             int dummy = compose_n_times(&factoriel, 10, 10);
                     if (dummy < 0) {
@@ -85,13 +92,13 @@ void custom(const std::string& str) {
             std::string final_hash = toHexString(hash3);
             
             // Check if it matches the secret
-            if (final_hash == "V0u5_4v32_7R0UVé_l4_80nn3_Clé_8r4V0?!") {
+            if (final_hash == HASH) {
                 // Slow down execution with compose_n_times (10 iterations of factorial)
                 int dummy = compose_n_times(&factoriel, 10, 10);
                 if (dummy < 0) {
                     std::cout << dummy << std::endl;
                 }
-                std::cout << "Vous avez gagne!" << std::endl;
+                std::cout << WIN_MESSAGE << std::endl;
             } else {
                 // Display the original string
                 std::cout << str << std::endl;

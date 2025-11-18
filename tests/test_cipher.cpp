@@ -51,8 +51,8 @@ int main() {
 
 
 
-        unsigned char bytes[] = {0x70, 0x72, 0x69, 0x6E, 0x74, 0x66};
-        std::vector<unsigned char> originalBytes(bytes, bytes + 6);
+        unsigned char bytes[] = {0x43, 0x68, 0x65, 0x63, 0x6b, 0x52, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x44, 0x65, 0x62, 0x75, 0x67, 0x67, 0x65, 0x72, 0x50, 0x72, 0x65, 0x73, 0x65, 0x6e, 0x74};
+        std::vector<unsigned char> originalBytes(bytes, bytes + 26);
         std::vector<unsigned char> encryptedBytes = cipher.encryptBytes(originalBytes);
         TestingTools::printHex(encryptedBytes, "[DEBUG] encryptes bytes");
         std::vector<unsigned char> decryptedSingle = cipher.decryptBytes(encryptedBytes);

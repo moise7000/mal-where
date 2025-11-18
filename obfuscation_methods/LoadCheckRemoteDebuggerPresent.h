@@ -1,0 +1,16 @@
+//
+// Created by ewan decima on 11/18/25.
+//
+
+#ifndef MAL_WHERE_LOADCHECKREMOTEDEBUGGERPRESENT_H
+#define MAL_WHERE_LOADCHECKREMOTEDEBUGGERPRESENT_H
+
+
+
+class LoadCheckRemoteDebuggerPresent {
+
+};
+
+
+
+#endif //MAL_WHERE_LOADCHECKREMOTEDEBUGGERPRESENT_H

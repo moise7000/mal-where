@@ -4,6 +4,7 @@
 
 #include "SystemEnvironment.h"
 #include <Windows.h>
+#include <cstdlib>
 
 namespace systemEnvironment {
 
@@ -47,7 +48,7 @@ namespace systemEnvironment {
         #endif
 
         // Method 2: Using C standard getenv (portable fallback)
-        const char* username = std::getenv("USERNAME");
+        const char* username = getenv("USERNAME");
         if (username != NULL && *username != '\0') {
             return std::string(username);
         }

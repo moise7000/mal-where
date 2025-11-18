@@ -18,8 +18,6 @@ set PACKING=packing.exe
 set COMPRESSOR=compressor.exe
 SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
-set PROCESSOR_ARCHITECTURE=processor_architecture.exe
-set TMP_PATH=tmp_path.exe
 set SHA=sha.exe
 set CALL=call_printf.exe
 set DEVIL=devil.exe
@@ -125,11 +123,7 @@ if errorlevel 1 goto error
 call :compile_FAKE_REC
 if errorlevel 1 goto error
 
-call :compile_PROCESSOR_ARCHITECTURE
-if errorlevel 1 goto error
 
-call :compile_TMP_PATH
-if errorlevel 1 goto error
 
 call :compile_SHA
 if errorlevel 1 goto error
@@ -159,8 +153,6 @@ call :run_PACKING
 call :run_COMPRESSOR
 call :run_COMPOSE
 call :run_FAKE_REC
-call :run_PROCESSOR_ARCHITECTURE
-call :run_TMP_PATH
 call :run_SHA
 call :run_CALL
 call :run_DEVIL
@@ -219,12 +211,6 @@ exit /b %errorlevel%
 
 
 
-:compile_TMP_PATH
-echo Compiling %TMP_PATH%...
-%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp  %CXXFLAGS%
-%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %RESOURCES_OBJ% %CXXFLAGS%
-exit /b %errorlevel%
-
 :compile_SHA
 echo Compiling %SHA%...
 %CXX% -o %SHA% crypto/hash_function.cpp  tests/test_hash_function.cpp  %CXXFLAGS%
@@ -232,13 +218,13 @@ exit /b %errorlevel%
 
 
 :compile_CALL
-echo Compiling %TMP_PATH%...
+echo Compiling %CALL%...
 %CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp env/SystemEnvironment.cpp packer/Cipher.cpp tests/TestingTools.cpp tests/test_call_printf.cpp  %CXXFLAGS%
 %CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp env/SystemEnvironment.cpp packer/Cipher.cpp tests/TestingTools.cpp tests/test_call_printf.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_DEVIL
-echo Compiling %TMP_PATH%...
+echo Compiling %DEVIL%...
 %CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm %CXXFLAGS%
 %CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm  %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
@@ -298,12 +284,6 @@ exit /b 0
 
 
 
-:run_TMP_PATH
-echo *** Test temp path ***
-%TMP_PATH%
-echo.
-exit /b 0
-
 :run_SHA
 echo *** Test sha function ***
 %SHA%
@@ -344,8 +324,6 @@ if exist %PACKING% del %PACKING%
 if exist %COMPRESSOR% del %COMPRESSOR%
 if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
-if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
-if exist %TMP_PATH% del %TMP_PATH%
 if exist %SHA% del %SHA%
 if exist %CALL% del %CALL%
 if exist %ANTI_DEBUG% del %ANTI_DEBUG%

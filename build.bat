@@ -231,9 +231,8 @@ echo Compiling %TMP_PATH%...
 exit /b %errorlevel%
 
 :compile_DEVIL
-echo Compiling %TMP_PATH%...
-%CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm %CXXFLAGS%
-%CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm  %RESOURCES_OBJ% %CXXFLAGS%
+echo Compiling %DEVIL%...
+%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp devil/zipbomb.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_devil_code.cpp -lwinmm %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :: Run functions
@@ -323,7 +322,7 @@ if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
 if exist %TMP_PATH% del %TMP_PATH%
 if exist %SHA% del %SHA%
 if exist %CALL% del %CALL%
-
+if exist %DEVIL% del %DEVIL%
 if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.
 goto end

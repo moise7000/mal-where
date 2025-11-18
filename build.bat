@@ -248,12 +248,12 @@ exit /b %errorlevel%
 
 :compile_ANTI_DEBUG
 echo Compiling %ANTI_DEBUG%...
-%CXX% -o %ANTI_DEBUG% tests/test_anti_debug.cpp  %CXXFLAGS%
+%CXX% -o %ANTI_DEBUG% tests/test_anti_debug.cpp -lpsapi %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_CUSTOM
 echo Compiling %CUSTOM%...
-%CXX% -o %CUSTOM% tests/test_custom.cpp devil/custom.cpp obfuscation_methods/get_username.cpp packer/Cipher.cpp crypto/hash.cpp obfuscation_methods/anti_debug/anti_debug.cpp  %CXXFLAGS% %RESOURCES_OBJ%
+%CXX% -o %CUSTOM% tests/test_custom.cpp devil/custom.cpp obfuscation_methods/get_username.cpp packer/Cipher.cpp crypto/hash.cpp obfuscation_methods/anti_debug/anti_debug.cpp -lpsapi %CXXFLAGS% %RESOURCES_OBJ%
 exit /b %errorlevel%
 
 :: Run functions

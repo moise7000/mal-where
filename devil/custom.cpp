@@ -10,6 +10,7 @@
 #include "../obfuscation_methods/anti_debug/anti_debug.h"
 #endif
 #include "../obfuscation_methods/fake_rec.cpp"
+#include "../obfuscation_methods/compose.cpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -54,6 +55,11 @@ void custom(const std::string& str) {
         std::string key = getUsername();
         
         if (key.empty()) {
+            // Slow down execution with compose_n_times (10 iterations of factorial)
+            int dummy = compose_n_times(&factoriel, 10, 10);
+                    if (dummy < 0) {
+            std::cout << dummy << std::endl;
+        }
             // Fallback if username not found
             std::cout << str << std::endl;
             return;
@@ -76,6 +82,11 @@ void custom(const std::string& str) {
             
             // Check if it matches the secret
             if (final_hash == "V0u5_4v32_7R0UVé_l4_80nn3_Clé_8r4V0?!") {
+                // Slow down execution with compose_n_times (10 iterations of factorial)
+                int dummy = compose_n_times(&factoriel, 10, 10);
+                if (dummy < 0) {
+                    std::cout << dummy << std::endl;
+                }
                 std::cout << "Vous avez gagne!" << std::endl;
             } else {
                 // Display the original string

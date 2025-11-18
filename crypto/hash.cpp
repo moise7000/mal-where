@@ -89,6 +89,7 @@ unsigned int custom_hash(const char* key) {
 
 
 // --- Exemple d'utilisation ---
+#ifndef NO_HASH_MAIN
 int main() {
     std::cout << "Test de la fonction custom_hash (C++98 compatible):" << std::endl;
     std::cout << "---------------------------------------------------" << std::endl;
@@ -123,3 +124,4 @@ int main() {
 
     return 0;
 }
+#endif // NO_HASH_MAIN

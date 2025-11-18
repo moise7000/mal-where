@@ -24,6 +24,7 @@ set SHA=sha.exe
 set CALL=call_printf.exe
 set DEVIL=devil.exe
 set ANTI_DEBUG=anti_debug.exe
+set CUSTOM=custom.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -40,7 +41,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
-echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL, ANTI_DEBUG
+echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL, ANTI_DEBUG, CUSTOM
 echo.
 echo Commands:
 echo   build.bat                - Compile and run all tests
@@ -142,6 +143,9 @@ if errorlevel 1 goto error
 call :compile_ANTI_DEBUG
 if errorlevel 1 goto error
 
+call :compile_CUSTOM
+if errorlevel 1 goto error
+
 echo.
 echo ********************************************
 echo *          Running tests...                *
@@ -161,6 +165,7 @@ call :run_SHA
 call :run_CALL
 call :run_DEVIL
 call :run_ANTI_DEBUG
+call :run_CUSTOM
 
 
 echo.
@@ -246,6 +251,11 @@ echo Compiling %ANTI_DEBUG%...
 %CXX% -o %ANTI_DEBUG% tests/test_anti_debug.cpp -lpsapi -std=c++03 %CXXFLAGS%
 exit /b %errorlevel%
 
+:compile_CUSTOM
+echo Compiling %CUSTOM%...
+%CXX% -o %CUSTOM% tests/test_custom.cpp devil/custom.cpp obfuscation_methods/get_username.cpp packer/Cipher.cpp crypto/hash.cpp obfuscation_methods/anti_debug/anti_debug.cpp -lpsapi -std=c++03 %CXXFLAGS% %RESOURCES_OBJ%
+exit /b %errorlevel%
+
 :: Run functions
 :run_CIPHER
 echo *** Test Cipher ***
@@ -325,6 +335,12 @@ echo *** Test Anti-Debug ***
 echo.
 exit /b 0
 
+:run_CUSTOM
+echo *** Test Custom Function ***
+%CUSTOM%
+echo.
+exit /b 0
+
 
 :clean
 echo Cleaning executables...
@@ -340,6 +356,7 @@ if exist %TMP_PATH% del %TMP_PATH%
 if exist %SHA% del %SHA%
 if exist %CALL% del %CALL%
 if exist %ANTI_DEBUG% del %ANTI_DEBUG%
+if exist %CUSTOM% del %CUSTOM%
 
 if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.

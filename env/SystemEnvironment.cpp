@@ -4,6 +4,7 @@
 
 #include "SystemEnvironment.h"
 #include <Windows.h>
+#include <cstdlib>
 
 namespace systemEnvironment {
 
@@ -34,5 +35,39 @@ namespace systemEnvironment {
 
         return "";
     }
+
+    std::string getUsername() {
+        #ifdef _WIN32
+            // Method 1: Using GetEnvironmentVariableA (Windows API - fast and safe)
+            char buffer[256];
+            DWORD size = GetEnvironmentVariableA("USERNAME", buffer, sizeof(buffer));
+
+            if (size > 0 && size < sizeof(buffer)) {
+                return std::string(buffer);
+            }
+        #endif
+
+        // Method 2: Using C standard getenv (portable fallback)
+        const char* username = getenv("USERNAME");
+        if (username != NULL && *username != '\0') {
+            return std::string(username);
+        }
+
+        // Not found
+        return "";
+    }
+
+    std::string getName() {
+        char buffer[MAX_COMPUTERNAME_LENGTH + 1];
+        DWORD size = sizeof(buffer);
+
+        if (GetComputerNameA(buffer, &size)) {
+            return std::string(buffer);
+        }
+
+        return "";
+    }
+
+
 
 }

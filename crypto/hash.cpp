@@ -88,38 +88,40 @@ unsigned int custom_hash(const char* key) {
 }
 
 
-// --- Exemple d'utilisation ---
-int main() {
-    std::cout << "Test de la fonction custom_hash (C++98 compatible):" << std::endl;
-    std::cout << "---------------------------------------------------" << std::endl;
-
-    std::string s1 = "hello world";
-    unsigned int hash1 = custom_hash(s1);
-    std::cout << "Hash de \"" << s1 << "\": " << hash1 << std::endl; // Utilise << pour les unsigned int
-
-    std::string s2 = "Hello World";
-    unsigned int hash2 = custom_hash(s2);
-    std::cout << "Hash de \"" << s2 << "\": " << hash2 << std::endl;
-
-    std::string s3 = "test exemple";
-    unsigned int hash3 = custom_hash(s3);
-    std::cout << "Hash de \"" << s3 << "\": " << hash3 << std::endl;
-
-    std::string s4 = "test exemple_"; // Juste un petit changement
-    unsigned int hash4 = custom_hash(s4);
-    std::cout << "Hash de \"" << s4 << "\": " << hash4 << std::endl;
-
-    // Test avec const char*
-    const char* c_str1 = "another string";
-    unsigned int hash_c1 = custom_hash(c_str1);
-    std::cout << "Hash de \"" << c_str1 << "\": " << hash_c1 << std::endl;
-
-    const char* c_str2 = "another string "; // Avec un espace
-    unsigned int hash_c2 = custom_hash(c_str2);
-    std::cout << "Hash de \"" << c_str2 << "\": " << hash_c2 << std::endl;
-
-    std::cout << "---------------------------------------------------" << std::endl;
-    std::cout << "Fin des tests." << std::endl;
-
-    return 0;
-}
+// // --- Exemple d'utilisation ---
+// #ifndef NO_HASH_MAIN
+// int main() {
+//     std::cout << "Test de la fonction custom_hash (C++98 compatible):" << std::endl;
+//     std::cout << "---------------------------------------------------" << std::endl;
+//
+//     std::string s1 = "hello world";
+//     unsigned int hash1 = custom_hash(s1);
+//     std::cout << "Hash de \"" << s1 << "\": " << hash1 << std::endl; // Utilise << pour les unsigned int
+//
+//     std::string s2 = "Hello World";
+//     unsigned int hash2 = custom_hash(s2);
+//     std::cout << "Hash de \"" << s2 << "\": " << hash2 << std::endl;
+//
+//     std::string s3 = "test exemple";
+//     unsigned int hash3 = custom_hash(s3);
+//     std::cout << "Hash de \"" << s3 << "\": " << hash3 << std::endl;
+//
+//     std::string s4 = "test exemple_"; // Juste un petit changement
+//     unsigned int hash4 = custom_hash(s4);
+//     std::cout << "Hash de \"" << s4 << "\": " << hash4 << std::endl;
+//
+//     // Test avec const char*
+//     const char* c_str1 = "another string";
+//     unsigned int hash_c1 = custom_hash(c_str1);
+//     std::cout << "Hash de \"" << c_str1 << "\": " << hash_c1 << std::endl;
+//
+//     const char* c_str2 = "another string "; // Avec un espace
+//     unsigned int hash_c2 = custom_hash(c_str2);
+//     std::cout << "Hash de \"" << c_str2 << "\": " << hash_c2 << std::endl;
+//
+//     std::cout << "---------------------------------------------------" << std::endl;
+//     std::cout << "Fin des tests." << std::endl;
+//
+//     return 0;
+// }
+// #endif // NO_HASH_MAIN

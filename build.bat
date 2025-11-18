@@ -225,8 +225,8 @@ exit /b %errorlevel%
 
 :compile_DEVIL
 echo Compiling %DEVIL%...
-%CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm %CXXFLAGS%
-%CXX% -o %DEVIL% devil/DevilCode.cpp -lwinmm  %RESOURCES_OBJ% %CXXFLAGS%
+%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp -lwinmm %CXXFLAGS%
+%CXX% -o %DEVIL% devil/DevilCode.cpp devil/Rickroll.cpp -lwinmm  %RESOURCES_OBJ% %CXXFLAGS%
 exit /b %errorlevel%
 
 :compile_ANTI_DEBUG

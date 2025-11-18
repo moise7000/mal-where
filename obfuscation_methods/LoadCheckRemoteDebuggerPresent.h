@@ -6,11 +6,8 @@
 #define MAL_WHERE_LOADCHECKREMOTEDEBUGGERPRESENT_H
 
 
-
 class LoadCheckRemoteDebuggerPresent {
-
 };
-
 
 
 #endif //MAL_WHERE_LOADCHECKREMOTEDEBUGGERPRESENT_H

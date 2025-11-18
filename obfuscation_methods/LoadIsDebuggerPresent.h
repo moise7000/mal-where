@@ -7,9 +7,17 @@
 
 
 
-class LoadIsDebuggerPresent {
+#include <Windows.h>
 
-};
+// Type de la fonction IsDebuggerPresent
+typedef BOOL (WINAPI *type_IsDebuggerPresent)();
+
+// Charge IsDebuggerPresent dynamiquement
+type_IsDebuggerPresent LoadIsDebuggerPresentFunction();
+
+// Libère la bibliothèque kernel32.dll
+void UnloadIsDebuggerPresentFunction();
+
 
 
 

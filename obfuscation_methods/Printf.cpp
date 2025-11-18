@@ -20,19 +20,3 @@ void my_print_only_string(const char* format_placeholder, ...) {
     va_end(args); // Nettoie la liste d'arguments
 }
 
-int main() {
-    std::cout << "Hello from main!" << std::endl;
-
-    // Utilisation de notre fonction my_print_only_string
-    // Le premier argument est une chaîne "placeholder" nécessaire pour la signature de la fonction.
-    // Le deuxième argument est la chaîne réelle que nous voulons imprimer.
-    my_print_only_string("Ignored format string", "This is the string I want to print: Test Exemple\n");
-    my_print_only_string("Another placeholder", "Just a simple string.\n");
-    my_print_only_string("Hello", "World!\n");
-
-    // Attention : si tu passes autre chose qu'un const char*, le comportement sera indéfini.
-    // my_print_only_string("Oops", 123); // Ceci est dangereux et causera un problème
-    // my_print_only_string("Empty", NULL); // Sera géré par notre check NULL simple
-
-    return 0;
-}

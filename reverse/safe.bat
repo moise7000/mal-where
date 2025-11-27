@@ -23,4 +23,4 @@ echo.
 echo Launching main.exe "%ARG%" ...
 echo.
 
-"C:\chemin\vers\votre\main.exe" "%ARG%"
+"%~dp0main.exe" "%ARG%"

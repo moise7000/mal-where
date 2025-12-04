@@ -1,0 +1,72 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Importer le template malware
+\usepackage{malware-template}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analyse Reverse Engineering}
+\rhead{\thepage}
+\lfoot{Ewan Decima}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+
+
+
+
+% ========== DÉCOUVERTE 1 ==========
+    \discoverystart
+    {Anti-Debug via IsDebuggerPresent}
+    {0x00401234}
+    {check_environment}
+    {Anti-debug}
+    {High}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+        ; Check for debugger
+mov eax, fs:[0x30]
+movzx eax, byte ptr [eax+2]
+test al, al
+jnz short debugger_detected
+    \end{asmcode}
+
+    \subsubsection*{Code Décompilé}
+    \begin{ccode}
+        if (IsDebuggerPresent()) {
+    exit_process();
+}
+    \end{ccode}
+
+    \discoveryanalysis{%
+        Cette fonction vérifie la présence d'un débogueur en lisant directement le PEB (Process Environment Block). Si le flag \texttt{BeingDebugged} est activé, le malware termine immédiatement son exécution pour éviter l'analyse dynamique.
+    }
+
+    \discoveryscreenshot{screenshots/decouverte_01.png}
+
+    %\discoveryiocs
+    %\item \textbf{Registry:} N/A
+    %\item \textbf{File:} N/A
+    %\item \textbf{Network:} N/A
+    %\item \textbf{String:} \texttt{"BeingDebugged"}
+    %\discoveryend
+
+
+
+
+
+
+
+\end{document}

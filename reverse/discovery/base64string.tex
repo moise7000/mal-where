@@ -30,32 +30,24 @@
 % ========== DÉCOUVERTE 1 ==========
     \discoverystart
     {Très longue chaîne encodée}
-    {0x}
+    {0047F350}
     {const}
     {Encodage}
     {Faible}
 
-    \subsubsection*{Code Assembleur}
-    \begin{asmcode}
-        ; Check for debugger
-mov eax, fs:[0x30]
-movzx eax, byte ptr [eax+2]
-test al, al
-jnz short debugger_detected
-    \end{asmcode}
 
 
 
     \discoveryanalysis{%
-        Cette longue chaine de caractère semble être une chaine encodée en \texttt{base64}. Après avoir mis cette chaine 
-        dans CyberChef celui-ci ne parvenenait pas à décoderla chaine. Nous avons alors construit un petit script Python.
-        Après une première itération, la chaine semblait toujours être encodé en \texttt{base64}. Nous avons alors
+        Cette longue chaîne de caractère semble être une chaîne encodée en \texttt{base64}. Après avoir mis cette chaîne
+        dans CyberChef celui-ci ne parvenenait pas à décoderla chaîne. Nous avons alors construit un petit script Python.
+        Après une première itération, la chaîne semblait toujours être encodé en \texttt{base64}. Nous avons alors
         modifié le script pour y ajouter une analyse d’entropie. Après une trentaine d'itération nous sommes parvenu à décoder la
-        chaine : \textbf{Hop là, on n'oublie pas de s'amuser}
+        chaîne : \textbf{Hop là, on n'oublie pas de s'amuser}
 
     }
 
-    \discoveryscreenshot{screenshots/decouverte_01.png}
+    \discoveryscreenshot{screenshots/base64.png}
 
     %\discoveryiocs
     %\item \textbf{Registry:} N/A

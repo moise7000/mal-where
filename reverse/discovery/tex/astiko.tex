@@ -1,0 +1,73 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Importer le template malware
+\usepackage{malware-template}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analyse Reverse Engineering}
+\rhead{\thepage}
+\lfoot{Ewan Decima}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+
+
+
+
+% ========== DÉCOUVERTE 1 ==========
+    \discoverystart
+    {Ecriture dans un fichier}
+    {0x00401D1C}
+    {?}
+    {Ecriture}
+    {Faible}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+mov     [esp+2Ch+Msg.pt.x], offset Mode ; "w"
+mov     [esp+2Ch+Msg.time], offset Filename ; "C:\\Users\\lhs\\AppData\\Local\\Temp\\a"...
+call    fopen
+test    eax, eax
+mov     [ebp+var_B8], eax
+jz      loc_401F2C
+mov     edi, [ebp+var_B8]
+mov     [esp+2Ch+Msg.pt.y], 13h ; Count
+mov     [esp+2Ch+Msg.pt.x], 1 ; Size
+mov     [esp+2Ch+Msg.time], offset aPakboEtLombrik ; "pakbo-et-lombrik.fr"
+mov     [esp+2Ch+File], edi ; File
+mov     [ebp+var_98], 6
+call    fwrite
+mov     [esp+2Ch+Msg.time], edi ; File
+call    fclose
+    \end{asmcode}
+
+
+    \discoveryanalysis{%
+        Ce code ouvre un fichier dans le dossier temporaire \texttt{lhs\textbackslash{}AppData\textbackslash{}Local\textbackslash{}Temp\textbackslash{}astiko.txt}
+        de l’utilisateur et y écrit la chaîne "pakbo-et-lombrik.fr". Si le dossier n'existe pas celui-ci est créé avant
+        l'écriture.
+    }
+
+    \discoveryscreenshot{../screenshots/astiko.png}
+
+
+
+
+
+
+
+
+
+\end{document}

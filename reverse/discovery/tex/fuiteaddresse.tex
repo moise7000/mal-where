@@ -1,0 +1,101 @@
+%! Author = ewan
+%! Date = 12/5/25
+
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{malware-template}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analyse Reverse Engineering}
+\rhead{\thepage}
+\lfoot{Ewan Decima}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+
+
+
+
+% ========== DÉCOUVERTE 1 ==========
+    \discoverystart
+    {Affichage furtif et fuite d'adresse mémoire}
+    {0x004052BC, 0x0040530C}
+    {?}
+    {?}
+    {Moyenne}
+
+
+
+
+
+    \discoveryscreenshot{../screenshots/cmdLine.png}
+
+
+
+    \discoveryanalysis{%
+        En éxecutant le ficher \texttt{main.exe} de manière légitime (en respectant les contraintes de taille, avec la
+        chaîne \texttt{a} par exemple), le programme affiche pendant mopoins d'une seconde la chaîne de caractère suivante :
+        \texttt{a   Félicitations ! tu as trouve la cle04114E0, 004114F8, 00411470, 00411468, 004114F0, 00411460}. 
+    En cherchant dans le résultat de \texttt{strings main.exe} on trouve la chaîne partielle \texttt{licitations !} et la chaîne
+    \texttt{\%p, \%p, \%p, \%p, \%p, \%p}, ansi en cherchant dans les données brutes avec IDA on peut remonter au code
+    assembleur suivant :
+
+
+    }
+
+    \subsubsection{Code Assembleur : Fuite d'adresse mémoire}
+    \begin{asmcode}
+mov     [esp+518h+hWnd], eax
+mov     [esp+518h+lpRect], edx
+call    __moddi3
+mov     [ebp+var_54], eax
+mov     [esp+518h+x1], offset strlen
+mov     [esp+518h+hdcSrc], offset free
+mov     [esp+518h+cy], offset malloc
+mov     [esp+518h+wDest], offset memcpy
+mov     [esp+518h+y], offset loc_4114F8
+mov     [esp+518h+lpRect], offset printf
+mov     [esp+518h+hWnd], offset aPPPPPP ; "%p, %p, %p, %p, %p, %p"
+mov     [ebp+var_44C], 4
+call    printf
+    \end{asmcode}
+
+
+    \discoveryanalysis{%
+        Ce code appel la fonction \texttt{printf} et affiche les addresses mémoires des fonctions suivantes :
+    \begin{itemize}
+        \item \texttt{strlen}
+        \item \texttt{free}
+        \item \texttt{malloc}
+        \item \texttt{memcpy}
+        \item \texttt{loc\_4114F8}
+        \item \texttt{printf}
+    \end{itemize}
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

@@ -1,0 +1,518 @@
+.idata:005662D0 ;
+.idata:005662D0 ; Imports from GDI32.dll
+.idata:005662D0 ;
+.idata:005662D0 ; Section 5. (virtual address 00166000)
+.idata:005662D0 ; Virtual size                  : 00000FDC (   4060.)
+.idata:005662D0 ; Section size in file          : 00001000 (   4096.)
+.idata:005662D0 ; Offset to raw data for section: 00161E00
+.idata:005662D0 ; Flags C0300040: Data Readable Writable
+.idata:005662D0 ; Alignment     : 4 bytes
+.idata:005662D0 ; ===========================================================================
+.idata:005662D0
+.idata:005662D0 ; Segment type: Externs
+.idata:005662D0 ; _idata
+.idata:005662D0 ; BOOL __stdcall BitBlt(HDC hdc, int x, int y, int cx, int cy, HDC hdcSrc, int x1, int y1, DWORD rop)
+.idata:005662D0                 extrn BitBlt:dword      ; CODE XREF: sub_401700+AC↑p
+.idata:005662D0                                         ; sub_401700+21B↑p ...
+.idata:005662D4 ; BOOL __stdcall StretchBlt(HDC hdcDest, int xDest, int yDest, int wDest, int hDest, HDC hdcSrc, int xSrc, int ySrc, int wSrc, int hSrc, DWORD rop)
+.idata:005662D4                 extrn StretchBlt:dword  ; CODE XREF: sub_404970+241↑p
+.idata:005662D4                                         ; DATA XREF: sub_404970+241↑r
+.idata:005662D8
+.idata:005662DC ;
+.idata:005662DC ; Imports from KERNEL32.dll
+.idata:005662DC ;
+.idata:005662DC ; BOOL __stdcall CheckRemoteDebuggerPresent(HANDLE hProcess, PBOOL pbDebuggerPresent)
+.idata:005662DC                 extrn CheckRemoteDebuggerPresent:dword
+.idata:005662DC                                         ; CODE XREF: sub_4044B0+26↑p
+.idata:005662DC                                         ; sub_4047A0+3F↑p
+.idata:005662DC                                         ; DATA XREF: ...
+.idata:005662E0 ; BOOL __stdcall CloseHandle(HANDLE hObject)
+.idata:005662E0                 extrn CloseHandle:dword ; CODE XREF: .text:0040AD1D↑p
+.idata:005662E0                                         ; DATA XREF: .text:0040AD1D↑r
+.idata:005662E4 ; HANDLE __stdcall CreateSemaphoreA(LPSECURITY_ATTRIBUTES lpSemaphoreAttributes, LONG lInitialCount, LONG lMaximumCount, LPCSTR lpName)
+.idata:005662E4                 extrn CreateSemaphoreA:dword
+.idata:005662E4                                         ; CODE XREF: sub_40AC80+3B↑p
+.idata:005662E4                                         ; sub_40ACD0+2D↑p
+.idata:005662E4                                         ; DATA XREF: ...
+.idata:005662E8 ; void __stdcall DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSection)
+.idata:005662E8                 extrn DeleteCriticalSection:dword
+.idata:005662E8                                         ; CODE XREF: sub_40A820+41↑p
+.idata:005662E8                                         ; sub_40F840+2D↑p ...
+.idata:005662EC ; void __stdcall EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection)
+.idata:005662EC                 extrn EnterCriticalSection:dword
+.idata:005662EC                                         ; CODE XREF: sub_40A7A0+1F↑p
+.idata:005662EC                                         ; .text:0040A8CF↑p ...
+.idata:005662F0 ; HANDLE __stdcall GetCurrentProcess()
+.idata:005662F0                 extrn GetCurrentProcess:dword
+.idata:005662F0                                         ; CODE XREF: sub_4044B0+15↑p
+.idata:005662F0                                         ; sub_4047A0+2E↑p ...
+.idata:005662F4 ; DWORD __stdcall GetCurrentProcessId()
+.idata:005662F4                 extrn GetCurrentProcessId:dword
+.idata:005662F4                                         ; CODE XREF: sub_40A610+6C↑p
+.idata:005662F4                                         ; DATA XREF: sub_40A610+6C↑r
+.idata:005662F8 ; DWORD __stdcall GetCurrentThreadId()
+.idata:005662F8                 extrn GetCurrentThreadId:dword
+.idata:005662F8                                         ; CODE XREF: sub_40A610+74↑p
+.idata:005662F8                                         ; .text:0040AB68↑p ...
+.idata:005662FC ; DWORD __stdcall GetLastError()
+.idata:005662FC                 extrn GetLastError:dword
+.idata:005662FC                                         ; CODE XREF: sub_40A7A0+4C↑p
+.idata:005662FC                                         ; sub_40AD60+B↑p
+.idata:005662FC                                         ; DATA XREF: ...
+.idata:00566300 ; HMODULE __stdcall GetModuleHandleA(LPCSTR lpModuleName)
+.idata:00566300                 extrn GetModuleHandleA:dword
+.idata:00566300                                         ; CODE XREF: sub_4016A0+16↑p
+.idata:00566300                                         ; sub_401990+265↑p ...
+.idata:00566304 ; FARPROC __stdcall GetProcAddress(HMODULE hModule, LPCSTR lpProcName)
+.idata:00566304                 extrn GetProcAddress:dword
+.idata:00566304                                         ; CODE XREF: sub_401190+13F↑p
+.idata:00566304                                         ; sub_4016A0+35↑p ...
+.idata:00566308 ; void __stdcall GetStartupInfoA(LPSTARTUPINFOA lpStartupInfo)
+.idata:00566308                 extrn GetStartupInfoA:dword
+.idata:00566308                                         ; CODE XREF: sub_401190+315↑p
+.idata:00566308                                         ; DATA XREF: sub_401190+315↑r
+.idata:0056630C ; void __stdcall GetSystemTimeAsFileTime(LPFILETIME lpSystemTimeAsFileTime)
+.idata:0056630C                 extrn GetSystemTimeAsFileTime:dword
+.idata:0056630C                                         ; CODE XREF: sub_40A610+57↑p
+.idata:0056630C                                         ; DATA XREF: sub_40A610+57↑r
+.idata:00566310 ; DWORD __stdcall GetTickCount()
+.idata:00566310                 extrn GetTickCount:dword
+.idata:00566310                                         ; CODE XREF: sub_401990+51D↑p
+.idata:00566310                                         ; sub_40A610+7C↑p
+.idata:00566310                                         ; DATA XREF: ...
+.idata:00566314 ; void __stdcall InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection)
+.idata:00566314                 extrn InitializeCriticalSection:dword
+.idata:00566314                                         ; CODE XREF: sub_40A820+77↑p
+.idata:00566314                                         ; sub_40F770+69↑p ...
+.idata:00566318 ; BOOL __stdcall IsDBCSLeadByteEx(UINT CodePage, BYTE TestChar)
+.idata:00566318                 extrn IsDBCSLeadByteEx:dword
+.idata:00566318                                         ; CODE XREF: sub_40BB90+BA↑p
+.idata:00566318                                         ; DATA XREF: sub_40BB90+BA↑r
+.idata:0056631C ; BOOL __stdcall IsDebuggerPresent()
+.idata:0056631C                 extrn IsDebuggerPresent:dword
+.idata:0056631C                                         ; CODE XREF: sub_404970+57↑p
+.idata:0056631C                                         ; DATA XREF: sub_404970+57↑r
+.idata:00566320 ; void __stdcall LeaveCriticalSection(LPCRITICAL_SECTION lpCriticalSection)
+.idata:00566320                 extrn LeaveCriticalSection:dword
+.idata:00566320                                         ; CODE XREF: sub_40A7A0+6C↑p
+.idata:00566320                                         ; .text:0040A906↑p ...
+.idata:00566324 ; HMODULE __stdcall LoadLibraryW(LPCWSTR lpLibFileName)
+.idata:00566324                 extrn LoadLibraryW:dword
+.idata:00566324                                         ; CODE XREF: sub_40A410+AC↑p
+.idata:00566324                                         ; DATA XREF: sub_40A410+AC↑r
+.idata:00566328 ; int __stdcall MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte, LPWSTR lpWideCharStr, int cchWideChar)
+.idata:00566328                 extrn MultiByteToWideChar:dword
+.idata:00566328                                         ; CODE XREF: sub_40BB30+4D↑p
+.idata:00566328                                         ; sub_40BB90+8D↑p ...
+.idata:0056632C ; BOOL __stdcall QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount)
+.idata:0056632C                 extrn QueryPerformanceCounter:dword
+.idata:0056632C                                         ; CODE XREF: sub_40A610+8B↑p
+.idata:0056632C                                         ; DATA XREF: sub_40A610+8B↑r
+.idata:00566330 ; BOOL __stdcall ReleaseSemaphore(HANDLE hSemaphore, LONG lReleaseCount, LPLONG lpPreviousCount)
+.idata:00566330                 extrn ReleaseSemaphore:dword
+.idata:00566330                                         ; CODE XREF: sub_40AAA0+4C↑p
+.idata:00566330                                         ; sub_40AB10+31↑p
+.idata:00566330                                         ; DATA XREF: ...
+.idata:00566334 ; void __stdcall SetLastError(DWORD dwErrCode)
+.idata:00566334                 extrn SetLastError:dword
+.idata:00566334                                         ; CODE XREF: sub_40AD60+28↑p
+.idata:00566334                                         ; DATA XREF: sub_40AD60+28↑r
+.idata:00566338 ; LPTOP_LEVEL_EXCEPTION_FILTER __stdcall SetUnhandledExceptionFilter(LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter)
+.idata:00566338                 extrn SetUnhandledExceptionFilter:dword
+.idata:00566338                                         ; CODE XREF: sub_401190+121↑p
+.idata:00566338                                         ; .text:0040A5CF↑p
+.idata:00566338                                         ; DATA XREF: ...
+.idata:0056633C ; void __stdcall Sleep(DWORD dwMilliseconds)
+.idata:0056633C                 extrn Sleep:dword       ; CODE XREF: sub_401190+8F↑p
+.idata:0056633C                                         ; sub_401990+FB↑p ...
+.idata:00566340 ; BOOL __stdcall TerminateProcess(HANDLE hProcess, UINT uExitCode)
+.idata:00566340                 extrn TerminateProcess:dword
+.idata:00566340                                         ; CODE XREF: .text:0040A5F9↑p
+.idata:00566340                                         ; DATA XREF: .text:0040A5F9↑r
+.idata:00566344 ; DWORD __stdcall TlsAlloc()
+.idata:00566344                 extrn TlsAlloc:dword    ; CODE XREF: sub_40ADD0+13↑p
+.idata:00566344                                         ; DATA XREF: sub_40ADD0+13↑r
+.idata:00566348 ; BOOL __stdcall TlsFree(DWORD dwTlsIndex)
+.idata:00566348                 extrn TlsFree:dword     ; CODE XREF: sub_40ADA0+A↑p
+.idata:00566348                                         ; DATA XREF: sub_40ADA0+A↑r
+.idata:0056634C ; LPVOID __stdcall TlsGetValue(DWORD dwTlsIndex)
+.idata:0056634C                 extrn TlsGetValue:dword ; CODE XREF: sub_40A7A0+45↑p
+.idata:0056634C                                         ; sub_40AD60+1A↑p
+.idata:0056634C                                         ; DATA XREF: ...
+.idata:00566350 ; BOOL __stdcall TlsSetValue(DWORD dwTlsIndex, LPVOID lpTlsValue)
+.idata:00566350                 extrn TlsSetValue:dword ; CODE XREF: sub_40AD30+12↑p
+.idata:00566350                                         ; DATA XREF: sub_40AD30+12↑r
+.idata:00566354 ; LONG __stdcall UnhandledExceptionFilter(struct _EXCEPTION_POINTERS *ExceptionInfo)
+.idata:00566354                 extrn UnhandledExceptionFilter:dword
+.idata:00566354                                         ; CODE XREF: .text:0040A5DF↑p
+.idata:00566354                                         ; DATA XREF: .text:0040A5DF↑r
+.idata:00566358 ; BOOL __stdcall VirtualProtect(LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, PDWORD lpflOldProtect)
+.idata:00566358                 extrn VirtualProtect:dword
+.idata:00566358                                         ; CODE XREF: sub_4047A0+10F↑p
+.idata:00566358                                         ; sub_409D10+10B↑p ...
+.idata:0056635C ; SIZE_T __stdcall VirtualQuery(LPCVOID lpAddress, PMEMORY_BASIC_INFORMATION lpBuffer, SIZE_T dwLength)
+.idata:0056635C                 extrn VirtualQuery:dword
+.idata:0056635C                                         ; CODE XREF: sub_409D10+A8↑p
+.idata:0056635C                                         ; sub_409E60+184↑p
+.idata:0056635C                                         ; DATA XREF: ...
+.idata:00566360 ; DWORD __stdcall WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds)
+.idata:00566360                 extrn WaitForSingleObject:dword
+.idata:00566360                                         ; CODE XREF: sub_40ABB0+33↑p
+.idata:00566360                                         ; sub_40AC30+2E↑p
+.idata:00566360                                         ; DATA XREF: ...
+.idata:00566364 ; int __stdcall WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar, LPBOOL lpUsedDefaultChar)
+.idata:00566364                 extrn WideCharToMultiByte:dword
+.idata:00566364                                         ; CODE XREF: sub_40BAB0+55↑p
+.idata:00566364                                         ; sub_40BED0+5F↑p
+.idata:00566364                                         ; DATA XREF: ...
+.idata:00566368
+.idata:0056636C ;
+.idata:0056636C ; Imports from msvcrt.dll
+.idata:0056636C ;
+.idata:0056636C                 extrn __imp__write:dword
+.idata:0056636C                                         ; DATA XREF: _write↑r
+.idata:00566370
+.idata:00566374 ;
+.idata:00566374 ; Imports from msvcrt.dll
+.idata:00566374 ;
+.idata:00566374                 extrn __imp___dllonexit:dword
+.idata:00566374                                         ; DATA XREF: __dllonexit↑r
+.idata:00566378                 extrn __imp___getmainargs:dword
+.idata:00566378                                         ; DATA XREF: __getmainargs↑r
+.idata:0056637C                 extrn __initenv:dword   ; DATA XREF: sub_401190+23D↑r
+.idata:00566380                 extrn __lconv_init:dword
+.idata:00566380                                         ; DATA XREF: .text:00409B33↑r
+.idata:00566384 ; int _mb_cur_max
+.idata:00566384                 extrn __mb_cur_max:dword
+.idata:00566384                                         ; DATA XREF: .text:0040BD15↑r
+.idata:00566384                                         ; .text:0040BD93↑r ...
+.idata:00566388                 extrn __imp___set_app_type:dword
+.idata:00566388                                         ; DATA XREF: __set_app_type↑r
+.idata:0056638C                 extrn __setusermatherr:dword
+.idata:0056638C                                         ; CODE XREF: .text:00401157↑p
+.idata:0056638C                                         ; DATA XREF: .text:00401157↑r
+.idata:00566390                 extrn _acmdln:dword     ; DATA XREF: sub_401190+164↑r
+.idata:00566394                 extrn __imp__amsg_exit:dword
+.idata:00566394                                         ; DATA XREF: _amsg_exit↑r
+.idata:00566398                 extrn __imp__cexit:dword
+.idata:00566398                                         ; DATA XREF: _cexit↑r
+.idata:0056639C ; int *__cdecl _errno()
+.idata:0056639C                 extrn __imp__errno:dword
+.idata:0056639C                                         ; DATA XREF: _errno↑r
+.idata:005663A0 ; int fmode
+.idata:005663A0                 extrn _fmode:dword      ; DATA XREF: .text:004010CF↑r
+.idata:005663A4                 extrn __imp__initterm:dword
+.idata:005663A4                                         ; DATA XREF: _initterm↑r
+.idata:005663A8                 extrn _iob:dword        ; DATA XREF: sub_409C40+45↑r
+.idata:005663A8                                         ; sub_409CB0+4↑r ...
+.idata:005663AC                 extrn __imp__lock:dword ; DATA XREF: _lock↑r
+.idata:005663B0 ; _onexit_t __cdecl onexit(_onexit_t Func)
+.idata:005663B0                 extrn _onexit:dword     ; CODE XREF: sub_409B60+A3↑p
+.idata:005663B0                                         ; DATA XREF: sub_409B60+A3↑r
+.idata:005663B4 ; int __cdecl _strnicmp(const char *Str1, const char *Str, size_t MaxCount)
+.idata:005663B4                 extrn __imp__strnicmp:dword
+.idata:005663B4                                         ; DATA XREF: _strnicmp↑r
+.idata:005663B8                 extrn __imp__unlock:dword
+.idata:005663B8                                         ; DATA XREF: _unlock↑r
+.idata:005663BC ; int __cdecl _vsnprintf(char *DstBuf, size_t MaxCount, const char *Format, va_list ArgList)
+.idata:005663BC                 extrn __imp__vsnprintf:dword
+.idata:005663BC                                         ; DATA XREF: _vsnprintf↑r
+.idata:005663C0 ; void __cdecl abort()
+.idata:005663C0                 extrn __imp_abort:dword ; DATA XREF: abort↑r
+.idata:005663C4 ; int __cdecl atoi(const char *Str)
+.idata:005663C4                 extrn __imp_atoi:dword  ; DATA XREF: atoi↑r
+.idata:005663C8 ; void *__cdecl calloc(size_t NumOfElements, size_t SizeOfElements)
+.idata:005663C8                 extrn __imp_calloc:dword
+.idata:005663C8                                         ; DATA XREF: calloc↑r
+.idata:005663CC ; void __cdecl __noreturn exit(int Code)
+.idata:005663CC                 extrn __imp_exit:dword  ; DATA XREF: exit↑r
+.idata:005663D0 ; int __cdecl fclose(FILE *File)
+.idata:005663D0                 extrn __imp_fclose:dword
+.idata:005663D0                                         ; DATA XREF: fclose↑r
+.idata:005663D4 ; char *__cdecl fgets(char *Buf, int MaxCount, FILE *File)
+.idata:005663D4                 extrn __imp_fgets:dword ; DATA XREF: fgets↑r
+.idata:005663D8 ; FILE *__cdecl fopen(const char *Filename, const char *Mode)
+.idata:005663D8                 extrn __imp_fopen:dword ; DATA XREF: fopen↑r
+.idata:005663DC ; int fprintf(FILE *File, const char *Format, ...)
+.idata:005663DC                 extrn __imp_fprintf:dword
+.idata:005663DC                                         ; DATA XREF: fprintf↑r
+.idata:005663E0 ; int __cdecl fputc(int Ch, FILE *File)
+.idata:005663E0                 extrn __imp_fputc:dword ; DATA XREF: fputc↑r
+.idata:005663E4 ; int __cdecl fputs(const char *Str, FILE *File)
+.idata:005663E4                 extrn __imp_fputs:dword ; DATA XREF: fputs↑r
+.idata:005663E8 ; void __cdecl free(void *Memory)
+.idata:005663E8                 extrn __imp_free:dword  ; DATA XREF: free↑r
+.idata:005663EC ; size_t __cdecl fwrite(const void *Str, size_t Size, size_t Count, FILE *File)
+.idata:005663EC                 extrn __imp_fwrite:dword
+.idata:005663EC                                         ; DATA XREF: fwrite↑r
+.idata:005663F0 ; int __cdecl isspace(int C)
+.idata:005663F0                 extrn __imp_isspace:dword
+.idata:005663F0                                         ; DATA XREF: isspace↑r
+.idata:005663F4 ; int __cdecl iswctype(wint_t C, wctype_t Type)
+.idata:005663F4                 extrn __imp_iswctype:dword
+.idata:005663F4                                         ; DATA XREF: iswctype↑r
+.idata:005663F8                 extrn __imp_localeconv:dword
+.idata:005663F8                                         ; DATA XREF: localeconv↑r
+.idata:005663FC ; void *__cdecl malloc(size_t Size)
+.idata:005663FC                 extrn __imp_malloc:dword
+.idata:005663FC                                         ; DATA XREF: malloc↑r
+.idata:00566400 ; void *__cdecl memchr(const void *Buf, int Val, size_t MaxCount)
+.idata:00566400                 extrn __imp_memchr:dword
+.idata:00566400                                         ; DATA XREF: memchr↑r
+.idata:00566404 ; void *__cdecl memcpy(void *Dst, const void *Src, size_t Size)
+.idata:00566404                 extrn __imp_memcpy:dword
+.idata:00566404                                         ; DATA XREF: memcpy↑r
+.idata:00566408 ; void *__cdecl memmove(void *Dst, const void *Src, size_t Size)
+.idata:00566408                 extrn __imp_memmove:dword
+.idata:00566408                                         ; DATA XREF: memmove↑r
+.idata:0056640C ; void *__cdecl memset(void *Dst, int Val, size_t Size)
+.idata:0056640C                 extrn __imp_memset:dword
+.idata:0056640C                                         ; DATA XREF: memset↑r
+.idata:00566410 ; void __cdecl perror(const char *ErrMsg)
+.idata:00566410                 extrn __imp_perror:dword
+.idata:00566410                                         ; DATA XREF: perror↑r
+.idata:00566414 ; int printf(const char *Format, ...)
+.idata:00566414                 extrn __imp_printf:dword
+.idata:00566414                                         ; DATA XREF: printf↑r
+.idata:00566418 ; int __cdecl putchar(int Ch)
+.idata:00566418                 extrn __imp_putchar:dword
+.idata:00566418                                         ; DATA XREF: putchar↑r
+.idata:0056641C ; int __cdecl puts(const char *Str)
+.idata:0056641C                 extrn __imp_puts:dword  ; DATA XREF: puts↑r
+.idata:00566420 ; int __cdecl rand()
+.idata:00566420                 extrn __imp_rand:dword  ; DATA XREF: rand↑r
+.idata:00566424 ; void *__cdecl realloc(void *Memory, size_t NewSize)
+.idata:00566424                 extrn __imp_realloc:dword
+.idata:00566424                                         ; DATA XREF: realloc↑r
+.idata:00566428 ; int scanf(const char *Format, ...)
+.idata:00566428                 extrn scanf:dword       ; DATA XREF: .text:loc_4114F8↑r
+.idata:0056642C                 extrn __imp_setlocale:dword
+.idata:0056642C                                         ; DATA XREF: setlocale↑r
+.idata:00566430                 extrn __imp_signal:dword
+.idata:00566430                                         ; DATA XREF: signal↑r
+.idata:00566434 ; int sprintf(char *Dest, const char *Format, ...)
+.idata:00566434                 extrn __imp_sprintf:dword
+.idata:00566434                                         ; DATA XREF: sprintf↑r
+.idata:00566438 ; void __cdecl srand(unsigned int Seed)
+.idata:00566438                 extrn __imp_srand:dword ; DATA XREF: srand↑r
+.idata:0056643C ; char *__cdecl strchr(const char *Str, int Val)
+.idata:0056643C                 extrn __imp_strchr:dword
+.idata:0056643C                                         ; DATA XREF: strchr↑r
+.idata:00566440 ; int __cdecl strcmp(const char *Str1, const char *Str2)
+.idata:00566440                 extrn __imp_strcmp:dword
+.idata:00566440                                         ; DATA XREF: strcmp↑r
+.idata:00566444 ; int __cdecl strcoll(const char *Str1, const char *Str2)
+.idata:00566444                 extrn __imp_strcoll:dword
+.idata:00566444                                         ; DATA XREF: strcoll↑r
+.idata:00566448 ; char *__cdecl strcpy(char *Dest, const char *Source)
+.idata:00566448                 extrn __imp_strcpy:dword
+.idata:00566448                                         ; DATA XREF: strcpy↑r
+.idata:0056644C ; char *__cdecl strerror(int)
+.idata:0056644C                 extrn __imp_strerror:dword
+.idata:0056644C                                         ; DATA XREF: strerror↑r
+.idata:00566450 ; size_t __cdecl strftime(char *Buf, size_t SizeInBytes, const char *Format, const struct tm *Tm)
+.idata:00566450                 extrn __imp_strftime:dword
+.idata:00566450                                         ; DATA XREF: strftime↑r
+.idata:00566454 ; size_t __cdecl strlen(const char *Str)
+.idata:00566454                 extrn __imp_strlen:dword
+.idata:00566454                                         ; DATA XREF: strlen↑r
+.idata:00566458 ; int __cdecl strncmp(const char *Str1, const char *Str2, size_t MaxCount)
+.idata:00566458                 extrn __imp_strncmp:dword
+.idata:00566458                                         ; DATA XREF: strncmp↑r
+.idata:0056645C ; size_t __cdecl strxfrm(char *Dst, const char *Src, size_t MaxCount)
+.idata:0056645C                 extrn __imp_strxfrm:dword
+.idata:0056645C                                         ; DATA XREF: strxfrm↑r
+.idata:00566460 ; time_t __cdecl static time(time_t *Time)
+.idata:00566460                 extrn time:dword        ; DATA XREF: sub_40AF50+3↑r
+.idata:00566464 ; wint_t __cdecl towlower(wint_t C)
+.idata:00566464                 extrn __imp_towlower:dword
+.idata:00566464                                         ; DATA XREF: towlower↑r
+.idata:00566468 ; wint_t __cdecl towupper(wint_t C)
+.idata:00566468                 extrn __imp_towupper:dword
+.idata:00566468                                         ; DATA XREF: towupper↑r
+.idata:0056646C ; int __cdecl vfprintf(FILE *File, const char *Format, va_list ArgList)
+.idata:0056646C                 extrn __imp_vfprintf:dword
+.idata:0056646C                                         ; DATA XREF: vfprintf↑r
+.idata:00566470 ; int __cdecl wcscoll(const wchar_t *Str1, const wchar_t *Str2)
+.idata:00566470                 extrn __imp_wcscoll:dword
+.idata:00566470                                         ; DATA XREF: wcscoll↑r
+.idata:00566474 ; size_t __cdecl wcsftime(wchar_t *Buf, size_t SizeInWords, const wchar_t *Format, const struct tm *Tm)
+.idata:00566474                 extrn __imp_wcsftime:dword
+.idata:00566474                                         ; DATA XREF: wcsftime↑r
+.idata:00566478 ; size_t __cdecl wcslen(const wchar_t *Str)
+.idata:00566478                 extrn __imp_wcslen:dword
+.idata:00566478                                         ; DATA XREF: wcslen↑r
+.idata:0056647C ; size_t __cdecl wcsxfrm(wchar_t *Dst, const wchar_t *Src, size_t MaxCount)
+.idata:0056647C                 extrn __imp_wcsxfrm:dword
+.idata:0056647C                                         ; DATA XREF: wcsxfrm↑r
+.idata:00566480
+.idata:00566484 ;
+.idata:00566484 ; Imports from USER32.dll
+.idata:00566484 ;
+.idata:00566484 ; HWND __stdcall CreateWindowExA(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam)
+.idata:00566484                 extrn CreateWindowExA:dword
+.idata:00566484                                         ; CODE XREF: sub_401990+50C↑p
+.idata:00566484                                         ; DATA XREF: sub_401990+50C↑r
+.idata:00566488 ; LRESULT __stdcall DefWindowProcA(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+.idata:00566488                 extrn DefWindowProcA:dword
+.idata:00566488                                         ; DATA XREF: sub_401700:loc_401820↑r
+.idata:0056648C ; LRESULT __stdcall DispatchMessageA(const MSG *lpMsg)
+.idata:0056648C                 extrn DispatchMessageA:dword
+.idata:0056648C                                         ; CODE XREF: sub_401990+593↑p
+.idata:0056648C                                         ; DATA XREF: sub_401990+593↑r
+.idata:00566490 ; HDC __stdcall GetDC(HWND hWnd)
+.idata:00566490                 extrn GetDC:dword       ; CODE XREF: sub_401700+4C↑p
+.idata:00566490                                         ; sub_401700+164↑p ...
+.idata:00566494 ; HWND __stdcall GetDesktopWindow()
+.idata:00566494                 extrn GetDesktopWindow:dword
+.idata:00566494                                         ; CODE XREF: sub_404970+75↑p
+.idata:00566494                                         ; DATA XREF: sub_404970+75↑r
+.idata:00566498 ; HWND __stdcall GetForegroundWindow()
+.idata:00566498                 extrn GetForegroundWindow:dword
+.idata:00566498                                         ; DATA XREF: sub_401990+6E↑r
+.idata:0056649C ; int __stdcall GetSystemMetrics(int nIndex)
+.idata:0056649C                 extrn GetSystemMetrics:dword
+.idata:0056649C                                         ; CODE XREF: sub_401990+23F↑p
+.idata:0056649C                                         ; sub_401990+252↑p
+.idata:0056649C                                         ; DATA XREF: ...
+.idata:005664A0 ; BOOL __stdcall GetWindowRect(HWND hWnd, LPRECT lpRect)
+.idata:005664A0                 extrn GetWindowRect:dword
+.idata:005664A0                                         ; CODE XREF: sub_404970+AA↑p
+.idata:005664A0                                         ; DATA XREF: sub_404970+AA↑r
+.idata:005664A4 ; BOOL __stdcall KillTimer(HWND hWnd, UINT_PTR uIDEvent)
+.idata:005664A4                 extrn KillTimer:dword   ; CODE XREF: sub_401700+26B↑p
+.idata:005664A4                                         ; DATA XREF: sub_401700+26B↑r
+.idata:005664A8 ; HCURSOR __stdcall LoadCursorA(HINSTANCE hInstance, LPCSTR lpCursorName)
+.idata:005664A8                 extrn LoadCursorA:dword ; CODE XREF: sub_401990+2A6↑p
+.idata:005664A8                                         ; DATA XREF: sub_401990+2A6↑r
+.idata:005664AC ; BOOL __stdcall PeekMessageA(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg)
+.idata:005664AC                 extrn PeekMessageA:dword
+.idata:005664AC                                         ; CODE XREF: sub_401990+573↑p
+.idata:005664AC                                         ; DATA XREF: sub_401990+573↑r
+.idata:005664B0 ; void __stdcall PostQuitMessage(int nExitCode)
+.idata:005664B0                 extrn PostQuitMessage:dword
+.idata:005664B0                                         ; CODE XREF: sub_401700+27B↑p
+.idata:005664B0                                         ; DATA XREF: sub_401700+27B↑r
+.idata:005664B4 ; ATOM __stdcall RegisterClassA(const WNDCLASSA *lpWndClass)
+.idata:005664B4                 extrn RegisterClassA:dword
+.idata:005664B4                                         ; CODE XREF: sub_401990+2B7↑p
+.idata:005664B4                                         ; DATA XREF: sub_401990+2B7↑r
+.idata:005664B8 ; int __stdcall ReleaseDC(HWND hWnd, HDC hDC)
+.idata:005664B8                 extrn ReleaseDC:dword   ; CODE XREF: sub_401700+CA↑p
+.idata:005664B8                                         ; sub_401700+22F↑p
+.idata:005664B8                                         ; DATA XREF: ...
+.idata:005664BC ; UINT_PTR __stdcall SetTimer(HWND hWnd, UINT_PTR nIDEvent, UINT uElapse, TIMERPROC lpTimerFunc)
+.idata:005664BC                 extrn SetTimer:dword    ; CODE XREF: sub_401700+103↑p
+.idata:005664BC                                         ; DATA XREF: sub_401700+103↑r
+.idata:005664C0 ; BOOL __stdcall ShowWindow(HWND hWnd, int nCmdShow)
+.idata:005664C0                 extrn ShowWindow:dword  ; CODE XREF: sub_401700+117↑p
+.idata:005664C0                                         ; sub_401990+B5↑p
+.idata:005664C0                                         ; DATA XREF: ...
+.idata:005664C4 ; BOOL __stdcall TranslateMessage(const MSG *lpMsg)
+.idata:005664C4                 extrn TranslateMessage:dword
+.idata:005664C4                                         ; CODE XREF: sub_401990+586↑p
+.idata:005664C4                                         ; DATA XREF: sub_401990+586↑r
+.idata:005664C8 ; BOOL __stdcall ValidateRect(HWND hWnd, const RECT *lpRect)
+.idata:005664C8                 extrn ValidateRect:dword
+.idata:005664C8                                         ; CODE XREF: sub_401700+24B↑p
+.idata:005664C8                                         ; DATA XREF: sub_401700+24B↑r
+.idata:005664CC
+.idata:005664D0 ;
+.idata:005664D0 ; Imports from libgcc_s_sjlj-1.dll
+.idata:005664D0 ;
+.idata:005664D0                 extrn __imp__Unwind_SjLj_Resume:dword
+.idata:005664D0                                         ; DATA XREF: _Unwind_SjLj_Resume↑r
+.idata:005664D4                 extrn __imp__Unwind_SjLj_Register:dword
+.idata:005664D4                                         ; DATA XREF: _Unwind_SjLj_Register↑r
+.idata:005664D8                 extrn __imp__Unwind_SjLj_Unregister:dword
+.idata:005664D8                                         ; DATA XREF: _Unwind_SjLj_Unregister↑r
+.idata:005664DC                 extrn __imp___moddi3:dword
+.idata:005664DC                                         ; DATA XREF: __moddi3↑r
+.idata:005664E0                 extrn __imp__Unwind_GetTextRelBase:dword
+.idata:005664E0                                         ; DATA XREF: _Unwind_GetTextRelBase↑r
+.idata:005664E4                 extrn __imp__Unwind_GetDataRelBase:dword
+.idata:005664E4                                         ; DATA XREF: _Unwind_GetDataRelBase↑r
+.idata:005664E8                 extrn __imp__Unwind_GetRegionStart:dword
+.idata:005664E8                                         ; DATA XREF: _Unwind_GetRegionStart↑r
+.idata:005664EC                 extrn __imp__Unwind_GetLanguageSpecificData:dword
+.idata:005664EC                                         ; DATA XREF: _Unwind_GetLanguageSpecificData↑r
+.idata:005664F0                 extrn __imp__Unwind_GetIPInfo:dword
+.idata:005664F0                                         ; DATA XREF: _Unwind_GetIPInfo↑r
+.idata:005664F4                 extrn __imp__Unwind_SetGR:dword
+.idata:005664F4                                         ; DATA XREF: _Unwind_SetGR↑r
+.idata:005664F8                 extrn __imp__Unwind_SetIP:dword
+.idata:005664F8                                         ; DATA XREF: _Unwind_SetIP↑r
+.idata:005664FC                 extrn __imp__Unwind_DeleteException:dword
+.idata:005664FC                                         ; DATA XREF: _Unwind_DeleteException↑r
+.idata:00566500                 extrn __imp__Unwind_SjLj_Resume_or_Rethrow:dword
+.idata:00566500                                         ; DATA XREF: _Unwind_SjLj_Resume_or_Rethrow↑r
+.idata:00566504                 extrn __imp__Unwind_SjLj_RaiseException:dword
+.idata:00566504                                         ; DATA XREF: _Unwind_SjLj_RaiseException↑r
+.idata:00566508                 extrn __imp___umoddi3:dword
+.idata:00566508                                         ; DATA XREF: __umoddi3↑r
+.idata:0056650C                 extrn __imp___udivdi3:dword
+.idata:0056650C                                         ; DATA XREF: __udivdi3↑r
+.idata:00566510
+.idata:00566510
+.CRT:00567000 ; Section 6. (virtual address 00167000)
+.CRT:00567000 ; Virtual size                  : 00000034 (     52.)
+.CRT:00567000 ; Section size in file          : 00000200 (    512.)
+.CRT:00567000 ; Offset to raw data for section: 00162E00
+.CRT:00567000 ; Flags C0300040: Data Readable Writable
+.CRT:00567000 ; Alignment     : 4 bytes
+.CRT:00567000 ; ===========================================================================
+.CRT:00567000
+.CRT:00567000 ; Segment type: Pure data
+.CRT:00567000 ; Segment permissions: Read/Write
+.CRT:00567000 _CRT            segment dword public 'DATA' use32
+.CRT:00567000                 assume cs:_CRT
+.CRT:00567000                 ;org 567000h
+.CRT:00567000 unk_567000      db    0                 ; DATA XREF: sub_401190+2D8↑o
+.CRT:00567001                 db    0
+.CRT:00567002                 db    0
+.CRT:00567003                 db    0
+.CRT:00567004                 db  10h
+.CRT:00567005                 db  10h
+.CRT:00567006                 db  40h ; @
+.CRT:00567007                 db    0
+.CRT:00567008 unk_567008      db    0                 ; DATA XREF: sub_401190:loc_401460↑o
+.CRT:00567009                 db    0
+.CRT:0056700A                 db    0
+.CRT:0056700B                 db    0
+.CRT:0056700C unk_56700C      db    0                 ; DATA XREF: sub_401190+337↑o
+.CRT:0056700D                 db    0
+.CRT:0056700E                 db    0
+.CRT:0056700F                 db    0
+.CRT:00567010                 db  60h ; `
+.CRT:00567011                 db  10h
+.CRT:00567012                 db  40h ; @
+.CRT:00567013                 db    0
+.CRT:00567014                 db  30h ; 0
+.CRT:00567015                 db  9Bh ; ›
+.CRT:00567016                 db  40h ; @
+.CRT:00567017                 db    0
+.CRT:00567018 unk_567018      db    0                 ; DATA XREF: sub_401190+32F↑o
+.CRT:00567019                 db    0
+.CRT:0056701A                 db    0
+.CRT:0056701B                 db    0
+.CRT:0056701C                 db    0
+.CRT:0056701D                 db    0
+.CRT:0056701E                 db    0
+.CRT:0056701F                 db    0
+.CRT:00567020 TlsCallbacks    dd offset TlsCallback_0 ; DATA XREF: .tls:TlsCallbacks_ptr↓o
+.CRT:00567024                 dd offset TlsCallback_1
+.CRT:00567028                 dd 0
+.CRT:0056702C                 align 10h
+.CRT:00567030 unk_567030      db    0                 ; DATA XREF: TlsCallback_0:loc_409AE1↑o
+.CRT:00567030                                         ; TlsCallback_0+36↑o ...
+.CRT:00567031                 db    0
+.CRT:00567032                 db    0
+.CRT:00567033                 db    0
+.CRT:00567034                 db    0
+.CRT:00567035                 db    0
+.CRT:00567036                 db    0
+.CRT:00567037                 db    0
+.CRT:00567038                 db    0
+.CRT:00567039                 db    0
+.CRT:0056703A                 db    0
+.CRT:0056703B                 db    0

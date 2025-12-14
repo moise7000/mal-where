@@ -1,0 +1,98 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Importer le template malware
+\usepackage{malware-template}
+\usepackage{amsmath}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analyse Reverse Engineering}
+\rhead{\thepage}
+\lfoot{Ewan Decima}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+
+
+
+
+% ========== DÉCOUVERTE 1 ==========
+    \discoverystart
+    {DeadCode : Petit Prince}
+    {0x004053D5}
+    {?}
+    {Deadcode}
+    {Moyenne}
+
+    \begin{asmcode}
+.text:00405341                 mov     [ebp+var_40], 0Ah
+
+.text:00405378                 mov     [ebp+var_44], 5
+    \end{asmcode}
+
+    \begin{asmcode}
+.text:004053D5 loc_4053D5:
+.text:004053D5                 mov     edx, [ebp+var_40]
+.text:004053D8                 mov     eax, [ebp+var_44]
+.text:004053DB                 cmp     edx, eax
+.text:004053DD                 js      loc_405708
+.text:004053E3                 mov     edx, [ebp+var_40]
+.text:004053E6                 mov     eax, [ebp+var_44]
+.text:004053E9                 movsx   ebx, [ebp+var_4A9]
+.text:004053F0                 imul    eax, edx
+.text:004053F3                 lea     eax, [ebx+eax]
+.text:004053F6                 mov     [ebp+var_54], eax
+.text:004053F9                 mov     eax, [ebp+var_54]
+.text:004053FC                 nop
+.text:004053FD                 nop
+.text:004053FE                 nop
+.text:004053FF                 nop
+.text:00405400                 nop
+.text:00405401                 nop
+.text:00405402                 nop
+    \end{asmcode}
+
+    \begin{asmcode}
+.text:00405708 loc_405708:
+.text:00405708                 mov     [esp+518h+hWnd], offset aLePetitPrinceR ; "Le Petit Prince raconte l"
+.text:0040570F                 mov     [ebp+var_44C], 4
+.text:00405719                 call    puts
+.text:0040571E                 movsx   ebx, [ebp+var_4A9]
+.text:00405725                 jmp     loc_405435
+    \end{asmcode}
+
+
+    \discoveryanalysis{%
+        La comparaison effectuée à l’adresse \texttt{0x004053DB} met en relation les valeurs de \texttt{var\_40} et \texttt{var\_44}. Si
+        $\texttt{var\_40} - \texttt{var\_44} < 0$, l’exécution saute à l’adresse \texttt{0x405708}, laquelle provoque ensuite l’affichage du texte suivant :
+        \begin{center}
+            \textit{Le Petit Prince raconte l' }[...]
+        \end{center}
+        Or, \texttt{var\_40} et \texttt{var\_44} valent respectivement 10 et 5. Cette condition n’est donc jamais vérifiée : il s’agit d’un simple leurre.
+    }
+
+
+    \discoveryscreenshot{../screenshots/deadcode.png}
+
+
+    \discoveryanalysis{%
+        Ainsi, sur l’image, le chemin de droite n’est jamais emprunté. Le graphe peut donc être élagué.
+    }
+
+
+
+
+
+
+\end{document}

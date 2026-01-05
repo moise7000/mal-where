@@ -1,0 +1,65 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Importer le template malware
+\usepackage{malware-template}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analyse Reverse Engineering}
+\rhead{\thepage}
+\lfoot{Ewan Decima}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+% ========== DÉCOUVERTE ANTI-DEBUG ==========
+    \discoverystart
+    {Détection de Débogueur (Anti-Debug)}
+    {0x004049C7}
+    {?}
+    {Evasion}
+    {Moyen}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+; Appel de l'API pour vérifier si un débogueur est attaché
+call    ds:IsDebuggerPresent
+test    eax, eax        ; Vérifie le résultat (1 = Debuggé, 0 = Normal)
+jnz     loc_404BCE      ; Si EAX != 0, saut vers la sortie (Evasion)
+
+; ... (Le payload s'exécuterait ici si EAX == 0) ...
+
+loc_404BCE:             ; Bloc de sortie prématurée
+mov     esp, [ebp+var_478]
+lea     eax, [ebp+var_450]
+mov     [esp+518h+hWnd], eax
+call    _Unwind_SjLj_Unregister ; Nettoyage contextuel
+lea     esp, [ebp-0Ch]
+pop     ebx
+pop     esi
+pop     edi
+pop     ebp
+retn                    ; Fin de la fonction sans exécuter le payload
+    \end{asmcode}
+
+
+    \discoveryanalysis{%
+        Le programme implémente une technique d'évasion basique via \texttt{IsDebuggerPresent}.
+        Il vérifie le drapeau \texttt{BeingDebugged} dans le PEB. Si un analyste est détecté (le registre \texttt{EAX} n'est pas nul),
+        l'instruction \texttt{jnz} redirige le flux d'exécution vers \texttt{loc\_404BCE}.
+        \newline
+        Ce bloc de code restaure simplement la pile et les registres avant de quitter la fonction via \texttt{retn}.
+        Cela empêche l'exécution du code malveillant (manipulations graphiques GDI) situé plus bas dans la fonction, rendant l'analyse dynamique silencieuse si la protection n'est pas contournée.
+    }
+
+\end{document}

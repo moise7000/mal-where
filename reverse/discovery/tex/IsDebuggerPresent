@@ -16,7 +16,7 @@
 \fancyhf{}
 \lhead{Analyse Reverse Engineering}
 \rhead{\thepage}
-\lfoot{Ewan Decima}
+\lfoot{Ely Marthouret}
 \rfoot{\today}
 \setlength{\headheight}{14pt}
 

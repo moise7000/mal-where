@@ -586,252 +586,332 @@ try {
 -  **Système non-responsive** : freeze avant même la fin
 
 ---
-# Le packer
+# Le Packer
 
-## Fonctionnement technique
 
-### 1 Architecture globale
 
-Le processus se déroule en 4 phases :
+## Objectif
+
+Ce packer PE transforme un exécutable Windows 32-bit en un ficher packé qui 
+
+- Préserve les ressources originals (`.rsrc`)
+- Compresse et chiffre un payload
+- Utilse le Precess Hollowing pour l'exécution
+- Obfusque les appels API critiques
+Génère des identifiants aléatoires (magic number ...)
+
+## Architecture globale
 
 ```
-[Fichier original] → [Compression RLE] → [Chiffrement XOR] → [Injection dans stub] → [Exécutable packé]
+┌─────────────────┐
+│  EXE Original   │
+│   (32-bit PE)   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Validation PE 32-bit   │
+│  Extraction .rsrc       │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Compression RLE        │
+│  (ratio ~10-30%)        │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Chiffrement XOR        │
+│  Clé 128-bit aléatoire  │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Génération stub C      │
+│  avec magic aléatoire   │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Compilation GCC        │
+│  (stub unpacker)        │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Injection sections:    │
+│  - .rsrc (préservée)    │
+│  - .tls (packed data)   │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  EXE Packé Final        │
+│  Process Hollowing      │
+└─────────────────────────┘
+
 ```
+## Composants Principaux
 
-### 2 Phase 1 : Lecture et validation
+### 1. PackedSection - Structure des données packées 
 
-```cpp
-bool processFile(const std::string& filePath)
 ```
-
-**Actions :**
-1. Lecture complète du fichier d'entrée en mémoire
-2. Vérification de la signature MZ (0x5A4D) du format PE
-3. Stockage dans le vecteur `inputFile`
-
-**Validation :**
-- Vérifie que le fichier est un exécutable Windows valide
-- Rejette les fichiers non-PE
-
-### 3 Phase 2 : Compression RLE
-
-```cpp
-std::vector<BYTE> compressRLE(const std::vector<BYTE>& input)
-```
-
-**Algorithme RLE (Run-Length Encoding) :**
-
-La compression détecte les séquences répétitives de bytes identiques.
-
-**Format de compression :**
-- Séquence répétée (≥4 occurrences) : `[0xFF] [count] [byte]`
-- Byte unique : `[byte]`
-- Byte 0xFF isolé : `[0xFF] [0x00]`
-
-**Exemple :**
-```
-Données originales : AA AA AA AA AA BB CC
-Données compressées : [0xFF] [05] [AA] [BB] [CC]
-```
-
-**Optimisation :**
-- Seulement les séquences de 4+ bytes identiques sont compressées
-- Les séquences plus courtes restent non compressées
-- Maximum 255 répétitions par séquence
-
-### 4 Phase 3 : Chiffrement XOR
-
-```cpp
-void encryptXOR(std::vector<BYTE>& data, const uint32_t key[4])
-```
-
-**Clé de chiffrement par défaut :**
-```
-key[0] = 0x12345678
-key[1] = 0x9ABCDEF0
-key[2] = 0xFEDCBA98
-key[3] = 0x87654321
-```
-
-**Algorithme :**
-1. La clé 128 bits (4 × 32 bits) est convertie en 16 bytes
-2. Chaque byte des données est XOR avec un byte de la clé
-3. La clé est répétée cycliquement sur toute la longueur
-
-**Formule :**
-```
-data[i] = data[i] XOR key[i % 16]
-```
-
-**Exemple :**
-```
-Données : [0x42, 0x43, 0x44, ...]
-Clé :     [0x78, 0x56, 0x34, ...]
-Résultat: [0x3A, 0x15, 0x70, ...]
-```
-
-### 5 Phase 4 : Structure de la section packed
-
-```cpp
-#pragma pack(push, 1)
 struct PackedSection {
-    DWORD magic;             // 0x4B435041 ("PACK")
-    DWORD unpacked_size;     // Taille originale
-    DWORD packed_size;       // Taille compressée
-    DWORD key[4];            // Clé XOR (128 bits)
-    // Données chiffrées suivent immédiatement
+    DWORD magic;          // Identifiant aléatoire (0x12XXXXXX)
+    DWORD unpacked_size;  // Taille originale
+    DWORD packed_size;    // Taille compressée
+    DWORD key[4];         // Clé XOR 128-bit
 };
 ```
 
-**Layout en mémoire :**
+**Rôle** : Header stocké au début de la section `.tls`, contient les métadonnées nécessaires au dépacking.
+
+
+### 2. **Compression RLE** - Run-Length Encoding
+
+**Algorithme** :
 ```
-[Header: 24 bytes]
-  ├─ Magic: 4 bytes (0x4B435041)
-  ├─ Unpacked size: 4 bytes
-  ├─ Packed size: 4 bytes
-  └─ XOR key: 16 bytes
-
-[Payload chiffré: packed_size bytes]
-```
-
-### 6 Phase 5 : Génération du stub
-
-```cpp
-void generateStubSource(const char* outputPath)
-```
-
-**Le stub généré contient :**
-
-1. **Lecture de lui-même :**
-    - Obtient son propre chemin via `GetModuleFileName()`
-    - Mappe le fichier en mémoire (memory-mapped file)
-
-2. **Localisation de la section .packed :**
-    - Parse les headers PE (DOS + NT)
-    - Recherche la section nommée ".packed"
-
-3. **Validation :**
-    - Vérifie le magic number (0x4B435041)
-    - Valide les tailles
-
-4. **Déchiffrement :**
-   ```c
-   void decryptXOR(unsigned char* data, DWORD size, DWORD* key)
-   ```
-    - Applique XOR avec la clé stockée dans le header
-
-5. **Décompression RLE :**
-   ```c
-   DWORD decompressRLE(unsigned char* input, DWORD inputSize, 
-                       unsigned char* output, DWORD outputSize)
-   ```
-    - Décode le format RLE : `[0xFF][count][byte]` → répétitions
-    - Restaure les données originales
-
-6. **Extraction temporaire :**
-    - Crée un fichier dans `%TEMP%` avec extension .exe
-    - Écrit l'exécutable décompressé
-
-7. **Exécution :**
-    - Lance le programme via `CreateProcess()`
-    - Transmet tous les arguments de ligne de commande
-    - Attend la fin du processus (`WaitForSingleObject`)
-    - Supprime le fichier temporaire
-    - Retourne le code de sortie du programme
-
-### 7 Phase 6 : Compilation du stub
-
-```cpp
-bool compileStub(const std::string& stubExePath)
+Données identiques répétées (count > 3) :
+    [0xFF] [count] [valeur]
+    
+Valeur 0xFF littérale :
+    [0xFF] [0x00]
+    
+Autres valeurs :
+    [valeur] (inchangée)
 ```
 
-**Processus :**
-1. Génère le code source C dans `%TEMP%\stub_source.c`
-2. Compile avec GCC :
-   ```bash
-   gcc -O2 -s -o unpacker_stub.exe stub_source.c
-   ```
-3. Options de compilation :
-    - `-O2` : Optimisation niveau 2
-    - `-s` : Strip symbols (réduit la taille)
-4. Vérifie que le stub a été créé correctement
-5. Gère les erreurs de compilation
+**Performances**:
+- Ratio moyen : 10-30% (dépend du contenu)
+- Efficace sur : code machine, sections nulles, padding
+- Moins efficace sur : données aléatoires, ressources compressées
 
-### 8 Phase 7 : Injection des données
 
-```cpp
-bool injectPackedData(const std::string& stubExePath,
-                      const std::vector<BYTE>& packedData,
-                      const std::string& outputPath)
+### 3. Chiffrement XOR - Symétrique 128-bit
+
+- Clé unique par exécuition du packer
+- Stocké en clair dans `PackedSection.key`
+- Déchiffrement identique au chiffrement (XOR symétrique)
+
+### 4. Génération du Stub - Code C obfusqué
+
+**Technique d'obuscation**
+
+#### a) Fragmentation de chaînes
+
+``` c
+#define S1 "Cre" "ate" "Pro" "cess" "A"
+#define S2 "Nt" "Unmap" "View" "Of" "Section"
+#define S3 "ntd" "ll." "dll"
 ```
 
-**Opérations :**
+#### b) Chargement dynamique d'API
 
-1. **Lecture du stub compilé** en mémoire
-
-2. **Modification des headers PE :**
-    - Calcule l'adresse de la nouvelle section
-    - Aligne sur `SectionAlignment` et `FileAlignment`
-
-3. **Création de la section .packed :**
-   ```cpp
-   IMAGE_SECTION_HEADER newSection;
-   memcpy(newSection.Name, ".packed", 7);
-   newSection.VirtualAddress = aligned_address;
-   newSection.SizeOfRawData = aligned_size;
-   newSection.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ;
-   ```
-
-4. **Mise à jour des headers :**
-    - Incrémente `NumberOfSections`
-    - Augmente `SizeOfImage`
-
-5. **Construction du fichier final :**
-    - Headers PE modifiés
-    - Sections originales du stub
-    - Nouvelle section .packed avec les données
-    - Padding d'alignement
-
-6. **Écriture du fichier de sortie**
-
----
-
-## 2. Structure du fichier packé
-
-### 1 Layout global
-
-```
-┌─────────────────────────────────┐
-│   Headers PE (DOS + NT)         │
-├─────────────────────────────────┤
-│   Section .text (code stub)     │
-├─────────────────────────────────┤
-│   Section .data (data stub)     │
-├─────────────────────────────────┤
-│   Section .rdata (imports)      │
-├─────────────────────────────────┤
-│   Section .packed               │
-│   ┌─────────────────────────┐   │
-│   │  PackedSection header   │   │
-│   │  (24 bytes)             │   │
-│   ├─────────────────────────┤   │
-│   │  Payload chiffré/compressé  │
-│   │  (packed_size bytes)    │   │
-│   └─────────────────────────┘   │
-└─────────────────────────────────┘
+```c
+char procName[50];
+strcpy(procName, S1);  // Reconstruction runtime
+pCreateProcessA myCreateProcess = 
+    (pCreateProcessA)GetProcAddress(GetModuleHandleA("kernel32.dll"), procName);
 ```
 
-### 2 Alignement PE
+#### c) Anti-debug timing
 
-**Section Alignment :** 4096 bytes (0x1000)
-- Alignement des sections en mémoire virtuelle
+```c
+volatile DWORD antiDebug = GetTickCount();
+// ... code critique ...
+DWORD tickDiff = GetTickCount() - antiDebug;
+if (tickDiff > 1000) return 1;  // Débogueur détecté
+```
 
-**File Alignment :** 512 bytes (0x200)
-- Alignement des sections sur disque
+#### d) Code mort
 
-## 3. Github caché
+```c
+DWORD temp1 = 0, temp2 = 0;
+temp1 = GetCurrentProcessId();
+if (temp1 == 0) return 1;  // Jamais vrai
+temp2 = sections[i].Characteristics;  // Lecture inutile
+```
 
-Le packer a été fait de tel sorte à ce que si on fait strings du exe alors il y a un lien vers notre faux github qui est donné comme si un README.md avait été laissé sans faire exprès. Ce Github est faux et emmène sur de fausses pistes.
+
+
+
+### 5. **Process Hollowing** - Injection en mémoire 
+
+
+**Séquence complète** :
+```
+┌─────────────────────────────┐
+│ 1. Création processus       │
+│    CREATE_SUSPENDED         │
+└──────────┬──────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ 2. GetThreadContext         │
+│    Récupère EIP, PEB        │
+└──────────┬──────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ 3. NtUnmapViewOfSection     │
+│    Vide la mémoire originale│
+└──────────┬──────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ 4. VirtualAllocEx           │
+│    Alloue nouvelle région   │
+└──────────┬──────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ 5. WriteProcessMemory       │
+│    Copie headers + sections │
+└──────────┬──────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ 6. Relocation des adresses  │
+│    Si base address change   │
+└──────────┬──────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ 7. SetThreadContext         │
+│    EAX = EntryPoint         │
+└──────────┬──────────────────┘
+           │
+           ▼
+┌─────────────────────────────┐
+│ 8. ResumeThread             │
+│    Exécution du payload     │
+└─────────────────────────────┘
+```
+
+
+### 6. **Présevation des Ressources**
+
+**Processus** :
+1. **Extraction** : Lit la section `.rsrc` de l'EXE original
+2. **Stockage** : Copie dans `originalResourceData`
+3. **Réinjection** : Ajoute une nouvelle section `.rsrc` au stub
+
+**Structure finale** :
+```
+┌────────────────────┐
+│  Stub unpacker     │
+│  (compiled code)   │
+├────────────────────┤
+│  .rsrc             │ ← Ressources originales
+│  (preserved)       │    (icons, strings, dialogs)
+├────────────────────┤
+│  .tls              │ ← Payload compressé + chiffré
+│  (packed data)     │    + PackedSection header
+└────────────────────┘
+```
+
+**But :**
+- La commande `strings m.exe` montre les mêmes chaînes que l'original
+- Analyse superficielle ne détecte rien d'anormale
+
+Cela nous permet de mettre l'URL d'un faux github contenant du code source d'un malware afin de piéger nos adversaires
+
+
+### 7. Magic Number - Identification unique
+
+**Génération**
+
+```c
+DWORD generateObfuscatedMagic() {
+    srand((unsigned int)(time(NULL) ^ GetTickCount()));
+    return 0x12000000 | (rand() & 0x00FFFFFF);
+}
+```
+
+**Format :** `0x12XXXXXX`où `XXXXXX` est aléatoire
+
+**Utilisation :**
+- Stocké dans `PackedSection.magic`
+- Codé en dur dans le stub généré: `if(testSec->magic == 0x12AB34CD)`
+- Permet au stub de retrouvé sa section de données
+
+## Flux d'exécution du Stub
+
+### Phase 1 : Initialisation 
+
+```
+1. GetModuleFileNameA()     → Récupère chemin de l'EXE
+2. CreateFileA()            → Ouvre le fichier
+3. CreateFileMappingA()     → Map en mémoire
+4. MapViewOfFile()          → Accès aux données
+```
+
+### Phase 2 : Recherche du Payload
+
+```
+5. Parse PE headers
+6. Scan sections
+7. Trouve section avec magic == 0x12XXXXXX
+8. Récupère PackedSection*
+```
+
+### Phase 3 : Décompression
+
+```
+9. VirtualAlloc(packed_size)      → Buffer chiffré
+10. memcpy(packedData)            → Copie données
+11. decryptXOR()                  → Déchiffrement
+12. VirtualAlloc(unpacked_size)   → Buffer décompressé
+13. decompressRLE()               → Décompression
+```
+
+### Phase 4 : Process Hollowing
+
+```
+14. CreateProcessA(SUSPENDED)     → Crée processus vide
+15. GetThreadContext()            → Récupère contexte
+16. NtUnmapViewOfSection()        → Vide mémoire
+17. VirtualAllocEx()              → Alloue nouvelle zone
+18. WriteProcessMemory()          → Copie PE complet
+19. Relocation                    → Ajuste adresses
+20. SetThreadContext(EAX=EP)      → Redirige exécution
+21. ResumeThread()                → Lance payload
+```
+
+## Utilisation 
+
+```
+# Basique
+packer.exe program.exe
+
+# Spécifier output
+packer.exe program.exe -o packed.exe
+
+# Mode debug (messages dans le stub)
+packer.exe program.exe -o packed.exe -d
+```
+
+### Sortie Console
+```
+[+] Found valid 32-bit PE file
+[*] Original size: 45056 bytes
+[*] Found .rsrc section in original file
+    Size: 8192 bytes
+[*] Section name: .tls
+[*] Generated magic: 0x12AB34CD
+[+] Compressed: 12345 bytes (27.4%)
+[+] Encryption complete
+[+] Obfuscated stub compiled successfully
+[*] Injecting resources and packed data into stub...
+
+[+] Successfully packed!
+[+] Original size:  45056 bytes
+[+] Compression:    27.4%
+[+] Resources:      Preserved (8192 bytes)
+[+] Output file:    packed.exe
+```
+# 3. Github caLe packer a été fait de tel sorte à ce que si on fait strings du exe alors il y a un lien vers notre faux github qui est donné comme si un README.md avait été laissé sans faire exprès. Ce Github est faux et emmène sur de fausses pistes.
 De plus un fichier .pdp qui contient plein de fausses fonctions a été laissé pour tromper les défenseurs également.
 
 

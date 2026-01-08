@@ -1,0 +1,58 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Importer le template malware
+\usepackage{malware-template}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analyse Reverse Engineering}
+\rhead{\thepage}
+\lfoot{Garance Frolla}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+
+
+
+
+
+
+    \discoverystart
+    {Opaque Predicate (Saut Impossible)}
+    {0x00404540}
+    {sub_4044B0}
+    {Obfuscation}
+    {Medium}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+        ; Calcul préalable: 0x2A (42) * 0x11 (17) = 0x2CA (714)
+mov     eax, [esp+6Ch+var_30] ; Charge 714
+test    eax, eax              ; Teste les flags sur un nombre positif
+js      loc_4046D8            ; "Jump if Sign" (ne saute jamais car positif)
+    \end{asmcode}
+
+    \discoveryanalysis{%
+        Une structure de contrôle trompeuse (Opaque Predicate) est utilisée pour masquer le chemin vers la routine de succès. Le programme effectue une multiplication dont le résultat (714) est toujours positif.
+        L'instruction \texttt{js} (Jump if Sign) teste si le résultat est négatif. Dans un flux normal, ce saut n'est jamais pris, cachant ainsi le bloc de code situé en \texttt{loc\_4046D8} aux outils d'analyse statique. Ce bloc caché contient l'appel à \texttt{puts} permettant d'afficher la chaîne secrète.
+    }
+
+    \discoveryend
+
+
+
+
+
+
+\end{document}

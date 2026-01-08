@@ -1,0 +1,57 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Importer le template malware
+\usepackage{malware-template}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Analyse Reverse Engineering}
+\rhead{\thepage}
+\lfoot{Garance Frolla}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+
+    \discoverystart
+    {Chaîne Chiffrée et Sortie}
+    {0x004046D8}
+    {loc_4046D8}
+    {Data Hiding}
+    {Faible}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+; Bloc atteint uniquement si l'Opaque Predicate est patché
+mov     [esp+6Ch+hProcess], offset off_47F307 ; Chaîne Base64
+call    ds:puts                               ; Affiche le résultat
+    \end{asmcode}
+
+    \discoveryanalysis{%
+        La chaîne de caractères située à l'offset \texttt{0x47F307} contient une donnée encodée en Base64 : \texttt{"VlXTXhXWGhhU0ZaV1lsaFNWVlZxUmt0WGJGcDBU"}.
+        L'analyse dynamique a révélé que cette chaîne n'est pas déchiffrée par la fonction \texttt{puts} standard, mais dépend probablement des constantes calculées précédemment (0x2A, 0x11) pour un déchiffrement XOR manuel ou une validation via l'algorithme récursif identifié plus loin. En modifiant le .exe nous n'avons pas réussi à obtenir le déchiffrement de la chaîne.
+    }
+
+
+    \discoveryend
+
+\end{document}
+
+
+
+
+
+
+
+
+

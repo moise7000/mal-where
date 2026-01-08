@@ -52,14 +52,18 @@ pop     ebp
 retn                    ; Fin de la fonction sans exécuter le payload
     \end{asmcode}
 
+    \discoveryscreenshot{../screenshots/isdebuggerpresent.png}
 
     \discoveryanalysis{%
-        Le programme implémente une technique d'évasion basique via \texttt{IsDebuggerPresent}.
+Le programme implémente une technique d'évasion basique via \texttt{IsDebuggerPresent}.
         Il vérifie le drapeau \texttt{BeingDebugged} dans le PEB. Si un analyste est détecté (le registre \texttt{EAX} n'est pas nul),
         l'instruction \texttt{jnz} redirige le flux d'exécution vers \texttt{loc\_404BCE}.
-        \newline
+
+
         Ce bloc de code restaure simplement la pile et les registres avant de quitter la fonction via \texttt{retn}.
         Cela empêche l'exécution du code malveillant (manipulations graphiques GDI) situé plus bas dans la fonction, rendant l'analyse dynamique silencieuse si la protection n'est pas contournée.
     }
+    
+
 
 \end{document}

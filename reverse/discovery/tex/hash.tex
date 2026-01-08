@@ -5,8 +5,7 @@
 
 % Packages de base
 \usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[french]{babel}
+\usepackage[T1]{fontenc}g
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
@@ -108,20 +107,34 @@ loc_403996:
     \end{asmcode}
 
     \discoveryanalysis{
-    La fonction \texttt{loc\_4039B5} permet d'afficher le premier octet de l'entrée : le message de victoire.
+    La fonction \texttt{loc\_4039B5} permet d'afficher le premier octet de l'entrée.
     }
 
 
     \discoveryscreenshot{../screenshots/hash.png}
 
-    %\discoveryiocs
-    %\item \textbf{Registry:} N/A
-    %\item \textbf{File:} N/A
-    %\item \textbf{Network:} N/A
-    %\item \textbf{String:} \texttt{"BeingDebugged"}
-    %\discoveryend
+\discoveryanalysis{
+Après avoir identifé ce potentiel comportement, nous avons tenté de le produire. Pour cela nous avons cherché le hash
+directement dans l'executable afin de le modifier afin de le remplacer par un hash de notre choix : le SHA-256 de 1234
+
+\begin{center}
+    03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4
+\end{center}
 
 
+}
+
+    \discoveryscreenshot{../screenshots/hash_1.png}
+    \discoveryscreenshot{../screenshots/hash_2.png}
+
+
+    \discoveryanalysis{
+    Cependant, en effectuant \texttt{m.exe 1234} le comportement reste inchangé. Deux hypothèses sont donc à considérer :
+    \begin{itemize}
+        \item le programme effectue un test d'intégrité sur son contenu ;
+        \item le hash identifé n'impacte en aucun cas la fonction légitime \texttt{echo}.
+    \end{itemize}
+    }
 
 
 

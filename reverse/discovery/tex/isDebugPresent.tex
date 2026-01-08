@@ -1,0 +1,110 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages de base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Importer le template malware 
+\usepackage{malware-template}
+
+% Configuration en-tête/pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Rapport d'Analyse - Crackme}
+\rhead{\thepage}
+\lfoot{Analyse IDA Pro}
+\rfoot{\today}
+\setlength{\headheight}{14pt}
+
+\begin{document}
+
+
+
+    \discoverystart
+    {Détection Manuelle du Débogueur (PEB)}
+    {0x004044DF}
+    {sub\_4044B0}
+    {Anti-debug / Evasion}
+    {High}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+; Acces manuel au TEB puis au PEB pour verifier le flag BeingDebugged
+mov     ebx, 28h
+mov     ecx, 2
+mov     eax, fs:[ebx+ecx*4]   ; EAX = Adresse du PEB (FS:[30h])
+mov     edx, eax
+cmp     byte ptr [edx+2], 0   ; Verifie l'offset +2 (BeingDebugged)
+jnz     loc_4045F0            ; Saute vers la sortie d'echec si detecte
+    \end{asmcode}
+
+    \subsubsection*{Code Décompilé (Reconstitution)}
+    \begin{ccode}
+// Verification combinee API et acces direct memoire
+CheckRemoteDebuggerPresent(GetCurrentProcess(), &pbDebuggerPresent);
+
+// Lecture directe du segment FS
+PEB* peb = (PEB*)__readfsdword(0x30);
+if (peb->BeingDebugged == 1) {
+    return 0; // Echec silencieux
+}
+    \end{ccode}
+
+    \discoveryanalysis{%
+        Le binaire utilise une technique d'anti-débogage classique mais obfusquée par des calculs d'index sur le segment FS. Il récupère l'adresse du \textbf{Process Environment Block (PEB)} à l'adresse \texttt{FS:[0x30]} et vérifie le champ \texttt{BeingDebugged} (offset 0x02).
+        Si ce champ est à 1 (présence d'un débogueur), le programme branche vers \texttt{loc\_4045F0}, qui nettoie la pile et retourne 0, empêchant l'exécution de la logique de décodage.
+    }
+
+    \discoveryend
+
+    \discoverystart
+    {Opaque Predicate (Saut Impossible)}
+    {0x00404540}
+    {sub\_4044B0}
+    {Obfuscation}
+    {Medium}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+; Calcul préalable: 0x2A (42) * 0x11 (17) = 0x2CA (714)
+mov     eax, [esp+6Ch+var_30] ; Charge 714
+test    eax, eax              ; Teste les flags sur un nombre positif
+js      loc_4046D8            ; "Jump if Sign" (ne saute jamais car positif)
+    \end{asmcode}
+
+    \discoveryanalysis{%
+        Une structure de contrôle trompeuse (Opaque Predicate) est utilisée pour masquer le chemin vers la routine de succès. Le programme effectue une multiplication dont le résultat (714) est toujours positif.
+        L'instruction \texttt{js} (Jump if Sign) teste si le résultat est négatif. Dans un flux normal, ce saut n'est jamais pris, cachant ainsi le bloc de code situé en \texttt{loc\_4046D8} aux outils d'analyse statique. Ce bloc caché contient l'appel à \texttt{puts} permettant d'afficher la chaîne secrète.
+    }
+
+    \discoveryend
+
+    \discoverystart
+    {Chaîne Chiffrée et Sortie}
+    {0x004046D8}
+    {loc\_4046D8}
+    {Data Hiding}
+    {Medium}
+
+    \subsubsection*{Code Assembleur}
+    \begin{asmcode}
+; Bloc atteint uniquement si l'Opaque Predicate est patché
+mov     [esp+6Ch+hProcess], offset off_47F307 ; Chaîne Base64
+call    ds:puts                               ; Affiche le résultat
+    \end{asmcode}
+
+    \discoveryanalysis{%
+        La chaîne de caractères située à l'offset \texttt{0x47F307} contient une donnée encodée en Base64 : \texttt{"VlXTXhXWGhhU0ZaV1lsaFNWVlZxUmt0WGJGcDBU"}.
+        L'analyse dynamique a révélé que cette chaîne n'est pas déchiffrée par la fonction \texttt{puts} standard, mais dépend probablement des constantes calculées précédemment (0x2A, 0x11) pour un déchiffrement XOR manuel ou une validation via l'algorithme récursif identifié plus loin. En modifiant le .exe nous n'avons pas réussi à obtenir le déchiffrement de la chaîne.
+    }
+
+    \discoveryiocs
+    \item \textbf{String:} \texttt{VlXTXhXWGhhU0ZaV1lsaFNWVlZxUmt0WGJGcDBU} (Base64)
+    \item \textbf{Offset:} 0x47F307
+    \discoveryend
+
+\end{document}

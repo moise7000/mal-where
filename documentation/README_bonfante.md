@@ -68,6 +68,6 @@ Enveloppe l'exécutable pour le dissimuler :
 
 ### 5. Techniques de Leurre
 * **Social Engineering** : Inclusion de liens vers un faux GitHub et de faux symboles de debug (.pdp) pour égarer les analystes.
-
+Vous pouvez retrouver le faux repo à l'adresse suivante : [moise7000/Malware-Telecom](https://github.com/moise7000/Malware-Telecom)
 ---
 *Ce projet est destiné uniquement à l'apprentissage de la sécurité informatique.*

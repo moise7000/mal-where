@@ -6,17 +6,18 @@ Nous avons décidé de faire un goodware et d'obfuscer son fonctionnement
 
 ## Table des matières
 
-1. [MaliciousEcho](#1-maliciousecho---fonction-de-routage)
-2. [Custom](#2-custom---fonction-de-validation-cryptographique)
-3. [Devil](#3-devil---fonction-destructrice)
+1. [MaliciousEcho](#maliciousecho---fonction-de-routage)
+2. [Custom](#custom---fonction-de-validation-cryptographique)
+3. [Devil](#devil---fonction-destructrice)
 4. [Dépendances](#dependances-techniques)
 5. [Packer](#packer)
-6. [Responsabilité](#responsabilite)
+6. [Fake GitHub](#fake-github-repository) 
+7. [Responsabilité](#responsabilite)
 
 
 ---
 
-## 1. MaliciousEcho - Fonction de routage
+## MaliciousEcho - Fonction de routage
 
 Point d'entrée principal qui **route l'exécution** vers deux chemins différents selon la longueur de la chaîne d'entrée :
 - Si la chaîne est **valide** (≥ 8 caractères) → appelle `custom_func` -> si les conditions sont remplies elle affiche str donc c'est un goodware
@@ -41,7 +42,7 @@ malicious_echo("valid_string_test", devil_wrapper, custom);  // Chaîne ≥ 8 �
 
 ---
 
-## 2. Custom - Fonction de validation cryptographique
+## Custom - Fonction de validation cryptographique
 
 
 Fonction de **validation cryptographique** avec détection de débogueur qui :
@@ -149,7 +150,7 @@ if (debug) {
 
 ---
 
-## 3. Devil - Fonction destructrice
+## Devil - Fonction destructrice
 
 
 ### Objectif
@@ -215,7 +216,7 @@ detonate_zipbomb("devil_zipbomb.bin", 10, 1024 * 1024);
 
 ---
 
-## 4. Schéma de flux global
+## Schéma de flux global
 
 ```
                     ┌────────────────────────┐
@@ -259,14 +260,14 @@ detonate_zipbomb("devil_zipbomb.bin", 10, 1024 * 1024);
                                                        │
                                               ┌────────┴────────┐
                                               │                 │
-                                           MATCH            NO MATCH
+                                            MATCH            NO MATCH
                                               │                 │
                                               ▼                 ▼
-                                    ┌──────────────┐   ┌──────────┐
-                                    │ WIN_MESSAGE  │   │Affiche str
-                                                        echo normal│
-                                    │              │   └──────────┘
-                                    └──────────────┘
+                                    ┌─────────────┐      ┌─────────────┐
+                                    │ WIN_MESSAGE │      │ Affiche str │
+                                    └─────────────┘      │ echo normal │
+                                                         └─────────────┘
+                                    
                                            
 ```
 
@@ -909,10 +910,14 @@ packer.exe program.exe -o packed.exe -d
 [+] Resources:      Preserved (8192 bytes)
 [+] Output file:    packed.exe
 ```
-# 3.Fake GitHub Repository
-Le packer a été fait de telle sorte que la commande  `strings main.exe` alors il y a un lien vers notre faux github qui est donné comme si un README.md avait été laissé sans faire exprès. Ce Github est faux et emmène sur de fausses pistes.
-De plus un fichier .pdp qui contient plein de fausses fonctions a été laissé pour tromper les défenseurs également.
+# Fake GitHub Repository
+Le packer a été conçu de telle sorte que la commande strings main.exe révèle le contenu du payload. Cela nous a permis
+d’intégrer dans l’exécutable un faux README (`FAKE_README.md`) renvoyant vers un faux dépôt GitHub, accessible à 
+l’adresse suivante : [moise7000/Malware-Telecom](https://github.com/moise7000/Malware-Telecom). Cela avait pour but de 
+tromper nos adversaires en leur donnant le code source d'un malware. 
 
+
+Par ailleurs, un fichier .pdp contenant de nombreuses fausses fonctions a également été laissé afin d’induire les défenseurs en erreur.
 
 
 ---

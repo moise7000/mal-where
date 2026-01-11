@@ -5,6 +5,39 @@
 Ce projet est un exécutable hybride capable d'agir comme un logiciel légitime (*goodware*) ou malveillant (*malware*) selon l'entrée utilisateur, protégé par un packer personnalisé.
 
 ---
+## Architecture du projet
+
+```
+mal-where
+├── FAKE_README.md  // README du faux repository
+├── README.md
+├── build.bat       
+├── crypto          // Logique du hash custom
+├── devil           // Fonctions malveillantes
+├── documentation
+│   ├── README_bonfante.md
+│   ├── slides_malware.pdf
+│   └── subject.pdf
+├── env           // Namespace pour obtenir des variables d'environements
+├── main.cpp
+├── obfuscation_methods    //IsDebuggerPresent ...
+├── obfuscator    // Utilitaires python obfuscation syntaxique
+├── packer        // Packer (real.cpp) + Cipher + Compressor ...
+├── resources.h   // nécessaire pour intégrer le faux README dans l'exe
+├── resources.rc
+├── reverse       // Analyse du malware adverse
+└── tests         // Tests de nos fonctionalités
+```
+
+**Précision sur le dossier `packer`** :
+
+Le fichier `packer/real.cpp` contient la logique du packer (process hollowing), tandis que le fichier 
+`packer/Packer.cpp`(respectivement `packer/Stub.cpp`) permet de compresser puis chiffrer (respectivement déchiffrer 
+puis décompresser)
+
+
+## Fonctionnalités
+
 
 ### 1. Mécanisme de Routage (Point d'entrée)
 Le programme analyse la longueur de la chaîne de caractères en entrée :

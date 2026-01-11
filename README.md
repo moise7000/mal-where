@@ -912,7 +912,7 @@ packer.exe program.exe -o packed.exe -d
 [+] Output file:    packed.exe
 ```
 # Fake GitHub Repository
-Le packer a été conçu de telle sorte que la commande strings main.exe révèle le contenu du payload. Cela nous a permis
+Le packer a été conçu de telle sorte que la commande strings m.exe révèle le contenu du payload. Cela nous a permis
 d’intégrer dans l’exécutable un faux README (`FAKE_README.md`) renvoyant vers un faux dépôt GitHub, accessible à 
 l’adresse suivante : [moise7000/Malware-Telecom](https://github.com/moise7000/Malware-Telecom). Cela avait pour but de 
 tromper nos adversaires en leur donnant le code source d'un malware. 

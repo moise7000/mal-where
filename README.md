@@ -1,6 +1,5 @@
 # Mal-where ?
-Fonctions Principales du Projet Malware du groupe 3 : Ewan Decima, Garance Frolla et Ely Marthouret
-
+Fonctions Principales du Projet Malware du groupe 3 : ED, GF EM
 Nous avons décidé de faire un goodware et d'obfuscer son fonctionnement
 
 ---
@@ -930,6 +929,6 @@ Ce projet est destiné à l'**apprentissage de la sécurité informatique**. Les
 **Usage autorisé** : Environnements de test isolés (VM avec snapshots)
 **Usage interdit** : Systèmes de production, réseaux non autorisés
 
-Rédigé par Garance Frolla, Ewan Decima et Ely Marthouret
+Rédigé par GF, ED et EM
 
 ---
